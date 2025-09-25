@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expediente Clínico Veterinario Interactivo (ECOP)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .nav-link {
+            transition: all 0.2s ease-in-out;
+        }
+        .nav-link.active {
+            background-color: #0d9488;
+            color: white;
+            font-weight: 600;
+        }
+        .section-content {
+            display: none;
+        }
+        .section-content.active {
+            display: block;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 350px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            aside {
+                display: none;
+            }
+            main {
+                margin-left: 0 !important;
+                padding: 0 !important;
+            }
+            .section-content {
+                display: block !important;
+            }
+            .no-print {
+                display: none;
+            }
+            .printable-section {
+                box-shadow: none !important;
+                border: 1px solid #e5e7eb !important;
+                page-break-inside: avoid;
+            }
+            h2 {
+                page-break-before: always;
+            }
+            h2:first-of-type {
+                 page-break-before: auto;
+            }
+            .chart-container {
+                display: none;
+            }
+            .print-header {
+                display: block !important;
+                text-align: center;
+                margin-bottom: 20px;
+            }
+        }
+        .notification {
+            padding: 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            animation: slideIn 0.3s ease-out;
+            z-index: 50;
+        }
+        .notification.success {
+            background-color: #10b981;
+            color: white;
+        }
+        .notification.error {
+            background-color: #ef4444;
+            color: white;
+        }
+        .notification.info {
+            background-color: #3b82f6;
+            color: white;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        .tooltip {
+            position: relative;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 8px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -100px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 12px;
+        }
+        .tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        .progress-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+        .progress-step::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background-color: #e2e8f0;
+            top: 15px;
+            left: -50%;
+            z-index: -1;
+        }
+        .progress-step:first-child::before {
+            display: none;
+        }
+        .progress-step.active::before {
+            background-color: #0d9488;
+        }
+        .progress-step.completed::before {
+            background-color: #0d9488;
+        }
+        .progress-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #64748b;
+        }
+        .progress-step.active .progress-circle {
+            background-color: #0d9488;
+            color: white;
+        }
+        .progress-step.completed .progress-circle {
+            background-color: #0d9488;
+            color: white;
+        }
+        .progress-label {
+            font-size: 12px;
+            color: #64748b;
+            text-align: center;
+        }
+        .progress-step.active .progress-label {
+            color: #0d9488;
+            font-weight: 600;
+        }
+        .print-header {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-slate-800">
+    <div id="notification-container" class="fixed bottom-4 right-4 z-50"></div>
+
+    <div class="flex flex-col md:flex-row min-h-screen">
+        <aside class="w-full md:w-64 bg-white border-r border-stone-200 p-4 md:p-6 shadow-md md:fixed md:h-full">
+            <h1 class="text-xl font-bold text-teal-700 mb-6">ECOP Interactivo</h1>
+            
+            <div class="mb-6">
+                <label for="expediente-select" class="block text-sm font-medium text-slate-700 mb-1">Expediente</label>
+                <div class="flex gap-2">
+                    <select id="expediente-select" class="flex-1 rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm">
+                        <option value="default">Expediente por defecto</option>
+                    </select>
+                    <button id="new-expediente-btn" class="p-2 bg-teal-600 text-white rounded-md hover:bg-teal-700 tooltip" title="Nuevo expediente">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                        <span class="tooltip-text">Crear nuevo expediente</span>
+                    </button>
+                    <button id="delete-expediente-btn" class="p-2 bg-red-600 text-white rounded-md hover:bg-red-700 tooltip" title="Eliminar expediente">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        <span class="tooltip-text">Eliminar expediente actual</span>
+                    </button>
+                </div>
+            </div>
+            
+            <nav id="main-nav" class="flex flex-row md:flex-col gap-2">
+                <a href="#identificacion" class="nav-link active flex items-center gap-3 p-3 rounded-lg text-slate-700 hover:bg-teal-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                    <span class="hidden md:inline">Identificación</span>
+                </a>
+                <a href="#examen" class="nav-link flex items-center gap-3 p-3 rounded-lg text-slate-700 hover:bg-teal-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 7.8l-7.7 7.7-4-4-5.7 5.7"></path><path d="M15 7h6v6"></path></svg>
+                    <span class="hidden md:inline">Examen Físico</span>
+                </a>
+                <a href="#planificacion" class="nav-link flex items-center gap-3 p-3 rounded-lg text-slate-700 hover:bg-teal-50">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span class="hidden md:inline">Planificación</span>
+                </a>
+                <a href="#progreso" class="nav-link flex items-center gap-3 p-3 rounded-lg text-slate-700 hover:bg-teal-50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                    <span class="hidden md:inline">Progreso (SOAP)</span>
+                </a>
+            </nav>
+            <div class="mt-8 pt-4 border-t border-stone-200">
+                 <button id="print-btn" class="w-full flex items-center justify-center gap-3 p-3 rounded-lg text-slate-700 bg-stone-100 hover:bg-stone-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                    <span class="hidden md:inline">Imprimir a PDF</span>
+                </button>
+                 <button id="clear-btn" class="w-full flex items-center justify-center gap-3 p-3 rounded-lg text-slate-700 bg-stone-100 hover:bg-stone-200 mt-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    <span class="hidden md:inline">Limpiar Formulario</span>
+                </button>
+            </div>
+        </aside>
+
+        <main class="flex-1 md:ml-64 p-4 sm:p-6 md:p-8">
+            <div class="print-header">
+                <h1 class="text-2xl font-bold text-center text-teal-700">Expediente Clínico Veterinario Interactivo (ECOP)</h1>
+                <div class="text-center text-sm text-slate-600 mt-2">
+                    <p>Clínica Veterinaria • Dirección • Teléfono</p>
+                    <p id="print-date"></p>
+                </div>
+            </div>
+            
+            <div class="progress-indicator no-print">
+                <div class="progress-step active" data-section="identificacion">
+                    <div class="progress-circle">1</div>
+                    <div class="progress-label">Identificación</div>
+                </div>
+                <div class="progress-step" data-section="examen">
+                    <div class="progress-circle">2</div>
+                    <div class="progress-label">Examen Físico</div>
+                </div>
+                <div class="progress-step" data-section="planificacion">
+                    <div class="progress-circle">3</div>
+                    <div class="progress-label">Planificación</div>
+                </div>
+                <div class="progress-step" data-section="progreso">
+                    <div class="progress-circle">4</div>
+                    <div class="progress-label">Progreso (SOAP)</div>
+                </div>
+            </div>
+
+            <div id="identificacion" class="section-content active">
+                <h2 class="text-2xl font-bold mb-6 text-slate-700">Sección I: Datos Generales y Anamnesis</h2>
+                <div class="space-y-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200 printable-section">
+                        <h3 class="text-lg font-semibold mb-4 text-teal-700 border-b pb-2">Datos del Propietario</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div><label class="block text-sm font-medium text-slate-600">Nombre completo <span class="text-red-500">*</span></label><input type="text" name="propietario-nombre" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" required></div>
+                            <div><label class="block text-sm font-medium text-slate-600">Dirección</label><input type="text" name="propietario-direccion" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                            <div><label class="block text-sm font-medium text-slate-600">Teléfono Móvil <span class="text-red-500">*</span></label><input type="tel" name="propietario-movil" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" required></div>
+                            <div><label class="block text-sm font-medium text-slate-600">Teléfono Fijo</label><input type="tel" name="propietario-fijo" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                            <div class="md:col-span-2"><label class="block text-sm font-medium text-slate-600">Correo electrónico</label><input type="email" name="propietario-email" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200 printable-section">
+                        <h3 class="text-lg font-semibold mb-4 text-teal-700 border-b pb-2">Datos del Paciente</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                             <div><label class="block text-sm font-medium text-slate-600">Nombre <span class="text-red-500">*</span></label><input type="text" name="paciente-nombre" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" required></div>
+                             <div>
+                                <label class="block text-sm font-medium text-slate-600">Especie <span class="text-red-500">*</span></label>
+                                <select name="paciente-especie" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" required>
+                                    <option value="">Seleccionar</option>
+                                    <option value="canino">Canino</option>
+                                    <option value="felino">Felino</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                             </div>
+                             <div><label class="block text-sm font-medium text-slate-600">Raza</label><input type="text" name="paciente-raza" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                             <div>
+                                <label class="block text-sm font-medium text-slate-600">Sexo</label>
+                                <select name="paciente-sexo" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm">
+                                    <option value="">Seleccionar</option>
+                                    <option value="macho-entero">Macho - Entero</option>
+                                    <option value="macho-castrado">Macho - Castrado</option>
+                                    <option value="hembra-entera">Hembra - Entera</option>
+                                    <option value="hembra-esterilizada">Hembra - Esterilizada</option>
+                                </select>
+                             </div>
+                             <div><label class="block text-sm font-medium text-slate-600">Edad</label><input type="text" name="paciente-edad" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                             <div><label class="block text-sm font-medium text-slate-600">Fecha de Nacimiento</label><input type="date" name="paciente-nacimiento" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                             <div class="md:col-span-3"><label class="block text-sm font-medium text-slate-600">Color / Señas particulares</label><input type="text" name="paciente-color" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200 printable-section">
+                        <h3 class="text-lg font-semibold mb-4 text-teal-700 border-b pb-2">Anamnesis</h3>
+                        <div class="space-y-4">
+                            <div><label class="block text-sm font-medium text-slate-600">Motivo Principal de Consulta (en palabras del propietario)</label><textarea name="anamnesis-motivo" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                            <div><label class="block text-sm font-medium text-slate-600">Historia de la Enfermedad Actual (HPI)</label><textarea name="anamnesis-hpi" rows="3" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Inicio y duración, frecuencia, tratamientos previos..."></textarea></div>
+                            <div><label class="block text-sm font-medium text-slate-600">Antecedentes Médicos</label><textarea name="anamnesis-antecedentes" rows="3" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Vacunas, desparasitación, historial médico-quirúrgico, historia reproductiva..."></textarea></div>
+                            <div><label class="block text-sm font-medium text-slate-600">Historia Ambiental y de Manejo</label><textarea name="anamnesis-ambiental" rows="3" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Hábitat, convivencia con otros animales, viajes recientes..."></textarea></div>
+                            <div><label class="block text-sm font-medium text-slate-600">Historia Nutricional</label><textarea name="anamnesis-nutricional" rows="3" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Tipo de dieta, marca, cantidad, cambios en apetito/sed..."></textarea></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="examen" class="section-content">
+                <h2 class="text-2xl font-bold mb-6 text-slate-700">Sección II: Examen Físico y Lista de Problemas</h2>
+                <div class="space-y-8">
+                    <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200 printable-section">
+                        <h3 class="text-lg font-semibold mb-4 text-teal-700 border-b pb-2">Constantes Fisiológicas y Gráfico de Referencia</h3>
+                        <p class="text-sm text-slate-500 mb-4 no-print">Ingrese los valores del paciente para compararlos visualmente con los rangos normales. El gráfico se actualizará automáticamente.</p>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                            <div>
+                                <div class="flex items-center justify-center mb-4 space-x-2 no-print">
+                                    <span class="text-sm font-medium text-slate-600">Especie de Referencia:</span>
+                                    <div class="flex items-center p-1 bg-stone-100 rounded-lg">
+                                        <button id="specie-canino" class="px-3 py-1 text-sm rounded-md bg-teal-600 text-white">Canino</button>
+                                        <button id="specie-felino" class="px-3 py-1 text-sm rounded-md text-slate-600">Felino</button>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div><label class="block text-sm font-medium text-slate-600">Temperatura (°C)</label><input type="number" step="0.1" id="val-temp" name="constantes-temp" class="vitals-input mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600">Frec. Cardíaca (lpm)</label><input type="number" id="val-fc" name="constantes-fc" class="vitals-input mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600">Frec. Respiratoria (rpm)</label><input type="number" id="val-fr" name="constantes-fr" class="vitals-input mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600">TLLC (seg)</label><input type="number" step="0.5" name="constantes-tllc" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600">Condición Corporal (1-5)</label><input type="number" step="1" min="1" max="5" name="constantes-condicion" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                                    <div><label class="block text-sm font-medium text-slate-600">Peso (kg)</label><input type="number" step="0.1" name="constantes-peso" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                                </div>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="vitalsChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                     <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200 printable-section">
+                        <h3 class="text-lg font-semibold mb-4 text-teal-700 border-b pb-2">Examen por Sistemas (Céfalo-Caudal)</h3>
+                        <div class="space-y-4">
+                           <div><label class="block text-sm font-medium text-slate-600">Observación general (estado mental, postura)</label><textarea name="examen-general" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                           <div><label class="block text-sm font-medium text-slate-600">Piel y anexos</label><textarea name="examen-piel" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                           <div><label class="block text-sm font-medium text-slate-600">Ojos, oídos, nariz y garganta (EENT)</label><textarea name="examen-eent" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                           <div><label class="block text-sm font-medium text-slate-600">Sistema linfático</label><textarea name="examen-linfatico" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                           <div><label class="block text-sm font-medium text-slate-600">Sistema cardiovascular</label><textarea name="examen-cardiovascular" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                           <div><label class="block text-sm font-medium text-slate-600">Sistema respiratorio</label><textarea name="examen-respiratorio" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                           <div><label class="block text-sm font-medium text-slate-600">Abdomen</label><textarea name="examen-abdomen" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                           <div><label class="block text-sm font-medium text-slate-600">Sistema urogenital</label><textarea name="examen-urogenital" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                           <div><label class="block text-sm font-medium text-slate-600">Sistema musculoesquelético</label><textarea name="examen-musculoesqueletico" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                           <div><label class="block text-sm font-medium text-slate-600">Sistema nervioso (básico)</label><textarea name="examen-nervioso" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="planificacion" class="section-content">
+                <h2 class="text-2xl font-bold mb-6 text-slate-700">Sección III: Planificación y Lista de Problemas</h2>
+                 <div class="bg-white p-6 rounded-lg shadow-sm border border-stone-200 printable-section mb-8">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-teal-700">Lista Maestra de Problemas</h3>
+                        <button id="add-problem-btn" class="bg-teal-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 text-sm no-print">Añadir Problema</button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-stone-50">
+                                <tr>
+                                    <th class="p-3 text-sm font-semibold tracking-wide text-left">N°</th>
+                                    <th class="p-3 text-sm font-semibold tracking-wide text-left">Problema (Descripción específica)</th>
+                                    <th class="p-3 text-sm font-semibold tracking-wide text-left">Estado</th>
+                                    <th class="p-3 text-sm font-semibold tracking-wide text-left no-print">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="problem-list-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div id="planificacion-container" class="space-y-8">
+                    <p class="text-center text-slate-500">Añada problemas a la lista maestra para generar sus planes correspondientes aquí.</p>
+                </div>
+            </div>
+
+            <div id="progreso" class="section-content">
+                <h2 class="text-2xl font-bold mb-6 text-slate-700">Sección IV: Notas de Progreso (SOAP)</h2>
+                <div class="flex justify-between items-center mb-6 no-print">
+                    <p class="text-slate-600">Añada una nueva nota de progreso para documentar la evolución del paciente.</p>
+                     <button id="add-soap-btn" class="bg-teal-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 text-sm">Añadir Nota SOAP</button>
+                </div>
+                <div id="soap-notes-container" class="space-y-8">
+                    <p class="text-center text-slate-500">No hay notas de progreso. Haga clic en "Añadir Nota SOAP" para empezar.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <template id="problem-plan-template">
+        <div class="problem-plan-item bg-white p-6 rounded-lg shadow-sm border border-stone-200 printable-section">
+            <h3 class="problem-title text-lg font-semibold mb-4 text-teal-700 border-b pb-2">Planificación para Problema N°</h3>
+            <div class="space-y-4">
+                <div><label class="block text-sm font-medium text-slate-600">Diagnósticos Diferenciales (DDx)</label><textarea name="ddx" rows="3" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="1. ...&#10;2. ...&#10;3. ..."></textarea></div>
+                <div><label class="block text-sm font-medium text-slate-600">Plan Diagnóstico (Pruebas, imágenes, etc.)</label><textarea name="plan-diagnostico" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                <div><label class="block text-sm font-medium text-slate-600">Plan Terapéutico (Fármacos, fluidos, etc.)</label><textarea name="plan-terapeutico" rows="2" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></textarea></div>
+                <div class="flex items-center pt-2">
+                    <input type="checkbox" name="consentimiento" class="h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500">
+                    <label class="ml-2 block text-sm text-gray-900">Consentimiento del Propietario (Plan y costos discutidos)</label>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="soap-note-template">
+        <div class="soap-note-item bg-white p-6 rounded-lg shadow-sm border border-stone-200 printable-section">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 border-b pb-4">
+                <div><label class="block text-sm font-medium text-slate-600">Fecha</label><input type="date" name="soap-fecha" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                <div><label class="block text-sm font-medium text-slate-600">Hora</label><input type="time" name="soap-hora" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                <div><label class="block text-sm font-medium text-slate-600">Problema N°</label><input type="text" name="soap-problema" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+                <div><label class="block text-sm font-medium text-slate-600">Veterinario</label><input type="text" name="soap-veterinario" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"></div>
+            </div>
+            <div class="space-y-4">
+                <div><label class="block text-sm font-semibold text-teal-700">S - SUBJETIVO</label><textarea name="soap-subjetivo" rows="3" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Reporte del propietario, observación del cuidador..."></textarea></div>
+                <div><label class="block text-sm font-semibold text-teal-700">O - OBJETIVO</label><textarea name="soap-objetivo" rows="3" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Constantes, hallazgos medibles, resultados de pruebas..."></textarea></div>
+                <div><label class="block text-sm font-semibold text-teal-700">A - ANÁLISIS</label><textarea name="soap-analisis" rows="3" class="mt-1 block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Evaluación de la respuesta al tratamiento, reevaluación de DDx..."></textarea></div>
+                <div>
+                    <label class="block text-sm font-semibold text-teal-700">P - PLAN</label>
+                    <div class="mt-2 space-y-2">
+                        <textarea name="soap-plan-dx" rows="2" class="block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Plan Dx: ..."></textarea>
+                        <textarea name="soap-plan-tx" rows="2" class="block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Plan Tx: ..."></textarea>
+                        <textarea name="soap-plan-cx" rows="2" class="block w-full rounded-md border-stone-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" placeholder="Plan Cx (Comunicación con cliente): ..."></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="text-right mt-4 no-print">
+                <button class="remove-soap-btn text-sm text-red-600 hover:text-red-800">Eliminar Nota</button>
+            </div>
+        </div>
+    </template>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const app = {
+        // Variables
+        currentExpediente: 'default',
+        expedientes: ['default'],
+        problemCount: 0,
+        currentSpecie: 'canino',
+        vitalsChart: null,
+        
+        // Inicialización
+        init: function() {
+            this.loadExpedientes();
+            this.setupEventListeners();
+            this.loadData();
+            this.createOrUpdateChart();
+            this.updatePrintDate();
+        },
+        
+        // Cargar la lista de expedientes desde localStorage
+        loadExpedientes: function() {
+            const saved = localStorage.getItem('expedientes');
+            if (saved) {
+                this.expedientes = JSON.parse(saved);
+            }
+            this.updateExpedienteSelect();
+        },
+        
+        // Guardar la lista de expedientes en localStorage
+        saveExpedientes: function() {
+            localStorage.setItem('expedientes', JSON.stringify(this.expedientes));
+        },
+        
+        // Actualizar el select de expedientes
+        updateExpedienteSelect: function() {
+            const select = document.getElementById('expediente-select');
+            select.innerHTML = '';
+            this.expedientes.forEach(exp => {
+                const option = document.createElement('option');
+                option.value = exp;
+                option.textContent = exp === 'default' ? 'Expediente por defecto' : exp;
+                if (exp === this.currentExpediente) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        },
+        
+        // Configurar event listeners
+        setupEventListeners: function() {
+            // Navegación
+            document.querySelectorAll('#main-nav a').forEach(link => {
+                link.addEventListener('click', this.handleNavigation.bind(this));
+            });
+            
+            // Botones de expediente
+            document.getElementById('new-expediente-btn').addEventListener('click', this.handleNewExpediente.bind(this));
+            document.getElementById('delete-expediente-btn').addEventListener('click', this.handleDeleteExpediente.bind(this));
+            document.getElementById('expediente-select').addEventListener('change', this.handleExpedienteChange.bind(this));
+            
+            // Botones de agregar problema y SOAP
+            document.getElementById('add-problem-btn').addEventListener('click', this.handleAddProblem.bind(this));
+            document.getElementById('add-soap-btn').addEventListener('click', this.handleAddSoap.bind(this));
+            
+            // Botón de imprimir y limpiar
+            document.getElementById('print-btn').addEventListener('click', () => window.print());
+            document.getElementById('clear-btn').addEventListener('click', this.handleClearForm.bind(this));
+            
+            // Eventos para eliminar problemas y SOAP
+            document.body.addEventListener('click', this.handleDeleteItem.bind(this));
+            
+            // Inputs de constantes vitales
+            document.querySelectorAll('.vitals-input').forEach(input => {
+                input.addEventListener('input', this.createOrUpdateChart.bind(this));
+            });
+            
+            // Botones de especie
+            document.getElementById('specie-canino').addEventListener('click', this.handleSpecieChange.bind(this, 'canino'));
+            document.getElementById('specie-felino').addEventListener('click', this.handleSpecieChange.bind(this, 'felino'));
+            
+            // Guardar datos al cambiar inputs
+            document.querySelectorAll('input, textarea, select').forEach(input => {
+                input.addEventListener('change', this.saveData.bind(this));
+            });
+        },
+        
+        // Manejar navegación
+        handleNavigation: function(e) {
+            e.preventDefault();
+            const targetId = e.target.getAttribute('href').substring(1);
+            
+            document.querySelectorAll('#main-nav a').forEach(link => {
+                link.classList.remove('active');
+            });
+            e.target.classList.add('active');
+            
+            document.querySelectorAll('.section-content').forEach(section => {
+                if (section.id === targetId) {
+                    section.classList.add('active');
+                } else {
+                    section.classList.remove('active');
+                }
+            });
+            
+            // Actualizar indicador de progreso
+            document.querySelectorAll('.progress-step').forEach(step => {
+                if (step.dataset.section === targetId) {
+                    step.classList.add('active');
+                } else {
+                    step.classList.remove('active');
+                }
+            });
+        },
+        
+        // Manejar cambio de expediente
+        handleExpedienteChange: function(e) {
+            this.saveData(); // Guardar datos del expediente actual
+            this.currentExpediente = e.target.value;
+            this.loadData(); // Cargar datos del nuevo expediente
+        },
+        
+        // Manejar nuevo expediente
+        handleNewExpediente: function() {
+            const name = prompt('Nombre del nuevo expediente:');
+            if (name && name.trim() !== '') {
+                if (this.expedientes.includes(name)) {
+                    this.showNotification('Ya existe un expediente con ese nombre', 'error');
+                    return;
+                }
+                this.expedientes.push(name);
+                this.saveExpedientes();
+                this.updateExpedienteSelect();
+                document.getElementById('expediente-select').value = name;
+                this.handleExpedienteChange({ target: { value: name } });
+                this.showNotification('Expediente creado correctamente', 'success');
+            }
+        },
+        
+        // Manejar eliminar expediente
+        handleDeleteExpediente: function() {
+            if (this.currentExpediente === 'default') {
+                this.showNotification('No se puede eliminar el expediente por defecto', 'error');
+                return;
+            }
+            
+            if (confirm(`¿Está seguro de que desea eliminar el expediente "${this.currentExpediente}"?`)) {
+                // Eliminar de la lista
+                this.expedientes = this.expedientes.filter(exp => exp !== this.currentExpediente);
+                this.saveExpedientes();
+                
+                // Eliminar datos del expediente
+                localStorage.removeItem(`expediente_${this.currentExpediente}`);
+                
+                // Cambiar al expediente por defecto
+                this.currentExpediente = 'default';
+                this.updateExpedienteSelect();
+                this.loadData();
+                
+                this.showNotification('Expediente eliminado correctamente', 'success');
+            }
+        },
+        
+        // Guardar datos del expediente actual
+        saveData: function() {
+            const data = {
+                identificacion: this.getSectionData('identificacion'),
+                examen: this.getSectionData('examen'),
+                planificacion: this.getSectionData('planificacion'),
+                progreso: this.getSectionData('progreso')
+            };
+            
+            localStorage.setItem(`expediente_${this.currentExpediente}`, JSON.stringify(data));
+        },
+        
+        // Obtener datos de una sección
+        getSectionData: function(sectionId) {
+            const section = document.getElementById(sectionId);
+            const inputs = section.querySelectorAll('input, textarea, select');
+            const data = {};
+            
+            inputs.forEach(input => {
+                if (input.name) {
+                    data[input.name] = input.value;
+                }
+            });
+            
+            return data;
+        },
+        
+        // Cargar datos del expediente actual
+        loadData: function() {
+            const savedData = localStorage.getItem(`expediente_${this.currentExpediente}`);
+            if (savedData) {
+                const data = JSON.parse(savedData);
+                
+                // Cargar datos de cada sección
+                Object.keys(data).forEach(sectionId => {
+                    const section = document.getElementById(sectionId);
+                    if (section) {
+                        const sectionData = data[sectionId];
+                        Object.keys(sectionData).forEach(key => {
+                            const input = section.querySelector(`[name="${key}"]`);
+                            if (input) {
+                                input.value = sectionData[key];
+                            }
+                        });
+                    }
+                });
+            }
+            
+            // Actualizar gráfico
+            this.createOrUpdateChart();
+        },
+        
+        // Manejar agregar problema
+        handleAddProblem: function() {
+            const planContainer = document.getElementById('planificacion-container');
+            
+            if (this.problemCount === 0) {
+                planContainer.innerHTML = '';
+            }
+
+            const problemNumber = this.romanNumerals[this.problemCount] || (this.problemCount + 1);
+            this.problemCount++;
+
+            const newRow = document.createElement('tr');
+            newRow.id = `problem-row-${this.problemCount}`;
+            newRow.innerHTML = `
+                <td class="p-3 text-sm text-slate-700 font-semibold">${problemNumber}</td>
+                <td class="p-3 text-sm text-slate-700"><input type="text" name="problema-${this.problemCount}" class="w-full bg-transparent border-b border-stone-300 focus:border-teal-500 outline-none" placeholder="Describa el problema..."></td>
+                <td class="p-3 text-sm text-slate-700">
+                    <select name="estado-${this.problemCount}" class="w-full bg-transparent border-b border-stone-300 focus:border-teal-500 outline-none">
+                        <option>Activo</option>
+                        <option>Resuelto</option>
+                        <option>Inactivo</option>
+                    </select>
+                </td>
+                <td class="p-3 text-sm no-print">
+                    <button class="remove-problem-btn text-red-500 hover:text-red-700" data-problem-id="${this.problemCount}">Eliminar</button>
+                </td>
+            `;
+            document.getElementById('problem-list-body').appendChild(newRow);
+
+            const planTemplate = document.getElementById('problem-plan-template').content.cloneNode(true);
+            const planItem = planTemplate.querySelector('.problem-plan-item');
+            planItem.id = `problem-plan-${this.problemCount}`;
+            planItem.querySelector('.problem-title').textContent = `Planificación para Problema N° ${problemNumber}`;
+            planContainer.appendChild(planItem);
+            
+            this.showNotification('Problema añadido correctamente', 'success');
+        },
+        
+        // Manejar agregar SOAP
+        handleAddSoap: function() {
+            const soapContainer = document.getElementById('soap-notes-container');
+            
+            if (soapContainer.querySelector('p')) {
+                soapContainer.innerHTML = '';
+            }
+            
+            const soapTemplate = document.getElementById('soap-note-template').content.cloneNode(true);
+            const today = new Date();
+            soapTemplate.querySelector('input[name="soap-fecha"]').valueAsDate = today;
+            soapTemplate.querySelector('input[name="soap-hora"]').value = today.toTimeString().substring(0,5);
+            soapContainer.prepend(soapTemplate);
+            
+            this.showNotification('Nota SOAP añadida correctamente', 'success');
+        },
+        
+        // Manejar eliminar problema o SOAP
+        handleDeleteItem: function(e) {
+            if (e.target.classList.contains('remove-problem-btn')) {
+                const problemId = e.target.dataset.problemId;
+                document.getElementById(`problem-row-${problemId}`)?.remove();
+                document.getElementById(`problem-plan-${problemId}`)?.remove();
+                if (document.getElementById('problem-list-body').children.length === 0) {
+                    document.getElementById('planificacion-container').innerHTML = '<p class="text-center text-slate-500">Añada problemas a la lista maestra para generar sus planes correspondientes aquí.</p>';
+                }
+                this.showNotification('Problema eliminado correctamente', 'success');
+            }
+            if (e.target.classList.contains('remove-soap-btn')) {
+                e.target.closest('.soap-note-item').remove();
+                if (document.getElementById('soap-notes-container').children.length === 0) {
+                    document.getElementById('soap-notes-container').innerHTML = '<p class="text-center text-slate-500">No hay notas de progreso. Haga clic en "Añadir Nota SOAP" para empezar.</p>';
+                }
+                this.showNotification('Nota SOAP eliminada correctamente', 'success');
+            }
+        },
+        
+        // Manejar cambio de especie
+        handleSpecieChange: function(specie) {
+            this.currentSpecie = specie;
+            document.getElementById('specie-canino').classList.toggle('bg-teal-600', specie === 'canino');
+            document.getElementById('specie-canino').classList.toggle('text-white', specie === 'canino');
+            document.getElementById('specie-felino').classList.toggle('bg-teal-600', specie === 'felino');
+            document.getElementById('specie-felino').classList.toggle('text-white', specie === 'felino');
+            this.createOrUpdateChart();
+        },
+        
+        // Manejar limpiar formulario
+        handleClearForm: function() {
+            if (confirm('¿Está seguro de que desea limpiar todos los datos del expediente actual? Esta acción no se puede deshacer.')) {
+                document.querySelectorAll('input, textarea, select').forEach(input => {
+                    if (input.type !== 'button' && input.type !== 'submit') {
+                        input.value = '';
+                    }
+                });
+                
+                // Limpiar problemas y SOAP
+                document.getElementById('problem-list-body').innerHTML = '';
+                document.getElementById('planificacion-container').innerHTML = '<p class="text-center text-slate-500">Añada problemas a la lista maestra para generar sus planes correspondientes aquí.</p>';
+                document.getElementById('soap-notes-container').innerHTML = '<p class="text-center text-slate-500">No hay notas de progreso. Haga clic en "Añadir Nota SOAP" para empezar.</p>';
+                
+                this.problemCount = 0;
+                this.createOrUpdateChart();
+                
+                this.showNotification('Formulario limpiado correctamente', 'success');
+            }
+        },
+        
+        // Crear o actualizar gráfico
+        createOrUpdateChart: function() {
+            const referenceData = {
+                canino: {
+                    temp: [37.5, 39.2],
+                    fc: [60, 160],
+                    fr: [10, 30]
+                },
+                felino: {
+                    temp: [38.0, 39.2],
+                    fc: [140, 220],
+                    fr: [20, 42]
+                }
+            };
+            
+            const patientData = {
+                temp: parseFloat(document.getElementById('val-temp').value) || 0,
+                fc: parseFloat(document.getElementById('val-fc').value) || 0,
+                fr: parseFloat(document.getElementById('val-fr').value) || 0,
+            };
+
+            const ref = referenceData[this.currentSpecie];
+            
+            const normalize = (value, min, max) => (value - min) / (max - min) * 100;
+
+            const normalizedPatientData = [
+                normalize(patientData.temp, ref.temp[0] - 2, ref.temp[1] + 2),
+                normalize(patientData.fc, ref.fc[0] - 20, ref.fc[1] + 20),
+                normalize(patientData.fr, ref.fr[0] - 10, ref.fr[1] + 10)
+            ];
+
+            const normalizedRefMin = [
+                normalize(ref.temp[0], ref.temp[0] - 2, ref.temp[1] + 2),
+                normalize(ref.fc[0], ref.fc[0] - 20, ref.fc[1] + 20),
+                normalize(ref.fr[0], ref.fr[0] - 10, ref.fr[1] + 10)
+            ];
+
+            const normalizedRefMax = [
+                normalize(ref.temp[1], ref.temp[0] - 2, ref.temp[1] + 2),
+                normalize(ref.fc[1], ref.fc[0] - 20, ref.fc[1] + 20),
+                normalize(ref.fr[1], ref.fr[0] - 10, ref.fr[1] + 10)
+            ];
+
+            const chartData = {
+                labels: [`Temp (°C)\nRef: ${ref.temp.join('-')}`, `FC (lpm)\nRef: ${ref.fc.join('-')}`, `FR (rpm)\nRef: ${ref.fr.join('-')}`],
+                datasets: [
+                    {
+                        label: 'Paciente',
+                        data: normalizedPatientData,
+                        backgroundColor: 'rgba(13, 148, 136, 0.2)',
+                        borderColor: 'rgba(13, 148, 136, 1)',
+                        pointBackgroundColor: 'rgba(13, 148, 136, 1)',
+                        pointBorderColor: '#fff',
+                        pointHoverBackgroundColor: '#fff',
+                        pointHoverBorderColor: 'rgba(13, 148, 136, 1)',
+                        borderWidth: 2,
+                    },
+                    {
+                        label: 'Rango Normal',
+                        data: normalizedRefMax,
+                        fill: {
+                            target: { value: normalizedRefMin[0]},
+                            above: 'rgba(245, 158, 11, 0.2)', 
+                        },
+                        borderColor: 'rgba(245, 158, 11, 0.5)',
+                        pointRadius: 0,
+                        borderWidth: 1,
+                        pointStyle: false,
+                    }
+                ]
+            };
+            
+            if (this.vitalsChart) {
+                this.vitalsChart.data = chartData;
+                this.vitalsChart.update();
+            } else {
+                const vitalsChartCanvas = document.getElementById('vitalsChart').getContext('2d');
+                this.vitalsChart = new Chart(vitalsChartCanvas, {
+                    type: 'radar',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        elements: {
+                            line: {
+                                borderWidth: 3
+                            }
+                        },
+                        scales: {
+                            r: {
+                                angleLines: { display: true },
+                                suggestedMin: 0,
+                                suggestedMax: 100,
+                                ticks: { display: false },
+                                pointLabels: {
+                                    font: {
+                                        size: 11
+                                    },
+                                    color: '#475569'
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                               position: 'top',
+                            },
+                            tooltip: {
+                               callbacks: {
+                                    label: function(context) {
+                                        if(context.dataset.label === 'Paciente') {
+                                            let originalValue = 0;
+                                            if (context.label.startsWith('Temp')) originalValue = patientData.temp;
+                                            if (context.label.startsWith('FC')) originalValue = patientData.fc;
+                                            if (context.label.startsWith('FR')) originalValue = patientData.fr;
+                                            return `Valor: ${originalValue}`;
+                                        }
+                                        return false;
+                                    }
+                               }
+                            }
+                        }
+                    }
+                });
+            }
+        },
+        
+        // Mostrar notificación
+        showNotification: function(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            
+            container.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    container.removeChild(notification);
+                }, 300);
+            }, 3000);
+        },
+        
+        // Actualizar fecha de impresión
+        updatePrintDate: function() {
+            const printDate = document.getElementById('print-date');
+            if (printDate) {
+                const today = new Date();
+                printDate.textContent = `Fecha de impresión: ${today.toLocaleDateString('es-ES')} ${today.toLocaleTimeString('es-ES')}`;
+            }
+        },
+        
+        // Números romanos para problemas
+        romanNumerals: ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+    };
+
+    // Inicializar la aplicación
+    app.init();
+});
+</script>
+</body>
+</html>
