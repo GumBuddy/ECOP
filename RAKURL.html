@@ -152,6 +152,24 @@
             color: white;
             background-color: #6c5ce7;
         }
+        .url-display {
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 8px;
+            border-radius: 4px;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        .privacy-badge {
+            display: inline-block;
+            background-color: #4caf50;
+            color: white;
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -238,12 +256,13 @@
                         
                         <div class="result-container" id="protectResult">
                             <hr>
-                            <h5>Enlace Protegido por RAKURL Security</h5>
-                            <div class="input-group mb-3">
+                            <h5>Enlace Protegido por RAKURL Security <span class="privacy-badge">PRIVADO</span></h5>
+                            <div class="url-display" id="protectedUrlDisplay"></div>
+                            <div class="input-group mt-3">
                                 <input type="text" class="form-control" id="protectedUrl" readonly="">
                                 <button class="btn btn-outline-secondary" type="button" id="copyProtectedUrl">Copiar</button>
                             </div>
-                            <div class="alert alert-warning">
+                            <div class="alert alert-warning mt-3">
                                 <strong>Importante:</strong> Guarda este enlace protegido y tu método de acceso (archivo .key o contraseña). Necesitarás ambos para acceder al enlace original.
                             </div>
                         </div>
@@ -345,6 +364,9 @@
         // Constantes para números mágicos
         const KEY_FILE_SIZE_BYTES = 12000;
         const PBKDF2_ITERATIONS = 10000;
+        
+        // URL base personalizada para mostrar al usuario
+        const CUSTOM_BASE_URL = "https://secure.rakurl/access#";
         
         // Estado de la aplicación encapsulado
         const appState = {
@@ -701,17 +723,25 @@
                 const encrypted = encryptUrl(urlInput.value, key);
                 
                 // Crear URL protegida (usando la URL actual como base)
-                let protectedUrl;
+                let realUrl;
+                let displayUrl;
+                
                 if (salt) {
                     // Si usamos contraseña, incluir el salt en la URL
                     const saltBase64 = salt.toString(CryptoJS.enc.Base64).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-                    protectedUrl = `${window.location.href.split('#')[0]}#${saltBase64}.${encrypted}`;
+                    realUrl = `${window.location.href.split('#')[0]}#${saltBase64}.${encrypted}`;
+                    displayUrl = `${CUSTOM_BASE_URL}${saltBase64}.${encrypted}`;
                 } else {
-                    protectedUrl = `${window.location.href.split('#')[0]}#${encrypted}`;
+                    realUrl = `${window.location.href.split('#')[0]}#${encrypted}`;
+                    displayUrl = `${CUSTOM_BASE_URL}${encrypted}`;
                 }
                 
                 // Mostrar resultado
-                document.getElementById('protectedUrl').value = protectedUrl;
+                const protectedUrlInput = document.getElementById('protectedUrl');
+                const protectedUrlDisplay = document.getElementById('protectedUrlDisplay');
+                
+                protectedUrlInput.value = realUrl;
+                protectedUrlDisplay.textContent = displayUrl;
                 resultContainer.style.display = 'block';
                 successMsg.style.display = 'block';
                 
@@ -747,13 +777,20 @@
                 return;
             }
             
+            // Si el usuario pegó una URL personalizada, reemplazarla con la URL real
+            let urlToProcess = protectedUrlInput.value;
+            if (urlToProcess.startsWith(CUSTOM_BASE_URL)) {
+                const hash = urlToProcess.substring(CUSTOM_BASE_URL.length);
+                urlToProcess = `${window.location.href.split('#')[0]}#${hash}`;
+            }
+            
             try {
                 // Extraer el hash de la URL
                 let encrypted;
                 let salt = null;
                 
-                if (protectedUrlInput.value.includes('#')) {
-                    const hashContent = protectedUrlInput.value.split('#')[1];
+                if (urlToProcess.includes('#')) {
+                    const hashContent = urlToProcess.split('#')[1];
                     
                     // Verificar si contiene salt (formato: salt.encrypted)
                     if (hashContent.includes('.')) {
@@ -765,7 +802,7 @@
                     }
                 } else {
                     // Si no hay hash, asumir que toda la URL es el texto cifrado
-                    encrypted = protectedUrlInput.value;
+                    encrypted = urlToProcess;
                 }
                 
                 if (!encrypted) {
