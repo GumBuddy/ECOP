@@ -141,6 +141,29 @@
             font-size: 24px;
             font-weight: bold;
         }
+        .password-section {
+            display: none;
+            margin-top: 15px;
+        }
+        .nav-tabs .nav-link {
+            color: #6c5ce7;
+        }
+        .nav-tabs .nav-link.active {
+            color: white;
+            background-color: #6c5ce7;
+        }
+        .debug-info {
+            display: none;
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            color: #333;
+            max-height: 200px;
+            overflow-y: auto;
+        }
     </style>
 </head>
 <body>
@@ -176,10 +199,31 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Generación de clave</label>
+                            <label class="form-label">Método de protección</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="protectionMethod" id="keyMethod" value="key" checked>
+                                <label class="form-check-label" for="keyMethod">
+                                    Generar archivo .key (recomendado)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="protectionMethod" id="passwordMethod" value="password">
+                                <label class="form-check-label" for="passwordMethod">
+                                    Usar contraseña
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 key-method-section">
                             <div class="alert alert-info">
                                 <i class="bi bi-info-circle-fill me-2"></i>Al proteger el enlace, RAKURL Security generará automáticamente un archivo .key con una combinación de números aleatorios que servirá como clave para descifrar el enlace.
                             </div>
+                        </div>
+                        
+                        <div class="mb-3 password-section">
+                            <label for="passwordInput" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="passwordInput" placeholder="Ingresa una contraseña segura">
+                            <div class="form-text">Usa una contraseña fuerte que puedas recordar. Esta será necesaria para acceder al enlace.</div>
                         </div>
                         
                         <button class="btn btn-primary" id="protectBtn">Proteger Enlace</button>
@@ -188,13 +232,17 @@
                             <i class="bi bi-exclamation-triangle-fill me-2"></i>La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.
                         </div>
                         
+                        <div class="error-message error-key" id="protectErrorKey">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Error al generar la clave. Por favor, intenta nuevamente.
+                        </div>
+                        
                         <div class="success-message" id="protectSuccess">
-                            <i class="bi bi-check-circle-fill me-2"></i>¡Enlace protegido exitosamente con RAKURL Security! Copia el enlace generado y descarga tu archivo clave.
+                            <i class="bi bi-check-circle-fill me-2"></i>¡Enlace protegido exitosamente con RAKURL Security! Copia el enlace generado y guarda tu método de acceso.
                         </div>
                         
                         <div class="key-info" id="keyInfo">
                             <h5><i class="bi bi-key-fill me-2"></i>Archivo de Clave Generado</h5>
-                            <p>RAKURL Security ha generado un archivo .key con 12000 números aleatorios binarios. Este archivo es necesario para acceder al enlace protegido.</p>
+                            <p>Se ha generado una clave de seguridad única. Descárgala y guárdala en un lugar seguro. La necesitarás para acceder al enlace.</p>
                             <button class="btn download-btn" id="downloadKeyBtn">
                                 <i class="bi bi-download me-2"></i>Descargar Archivo .key
                             </button>
@@ -208,7 +256,7 @@
                                 <button class="btn btn-outline-secondary" type="button" id="copyProtectedUrl">Copiar</button>
                             </div>
                             <div class="alert alert-warning">
-                                <strong>Importante:</strong> Guarda este enlace protegido y descarga el archivo .key generado. Necesitarás ambos para acceder al enlace original.
+                                <strong>Importante:</strong> Guarda este enlace protegido y tu método de acceso (archivo .key o contraseña). Necesitarás ambos para acceder al enlace original.
                             </div>
                         </div>
                     </div>
@@ -228,14 +276,34 @@
                         </div>
                         
                         <div class="mb-3">
+                            <label class="form-label">Método de acceso</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="accessMethod" id="keyAccessMethod" value="key" checked>
+                                <label class="form-check-label" for="keyAccessMethod">
+                                    Usar archivo .key
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="accessMethod" id="passwordAccessMethod" value="password">
+                                <label class="form-check-label" for="passwordAccessMethod">
+                                    Usar contraseña
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 key-access-section">
                             <label class="form-label">Cargar archivo clave (.key)</label>
                             <div class="file-drop-area" id="fileDropAreaAccess">
-                                <span class="file-msg">Arrastra y suelta tu archivo .key aquí</span>
-                                <span>o</span>
-                                <button class="btn btn-sm btn-outline-primary mt-2">Seleccionar archivo .key</button>
+                                <span class="file-msg">Arrastra el archivo .key aquí o haz clic para seleccionarlo</span>
                                 <input class="file-input" type="file" id="keyFileInputAccess" accept=".key">
                             </div>
                             <div class="form-text">Usa el archivo .key que generó RAKURL Security al proteger el enlace.</div>
+                        </div>
+                        
+                        <div class="mb-3 password-access-section" style="display: none;">
+                            <label for="accessPasswordInput" class="form-label">Contraseña</label>
+                            <input type="password" class="form-control" id="accessPasswordInput" placeholder="Ingresa la contraseña">
+                            <div class="form-text">Ingresa la misma contraseña que usaste para proteger el enlace.</div>
                         </div>
                         
                         <button class="btn btn-primary" id="accessBtn">Acceder</button>
@@ -245,7 +313,7 @@
                         </div>
                         
                         <div class="error-message error-key" id="accessErrorKey">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>La llave ingresada es incorrecta o el archivo no es un .key válido. Asegúrate de usar el archivo .key correcto generado por RAKURL Security.
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>La llave ingresada es incorrecta o el archivo no es un .key válido. Asegúrate de usar el método de acceso correcto generado por RAKURL Security.
                         </div>
                         
                         <div class="success-message" id="accessSuccess">
@@ -261,6 +329,9 @@
                                 <button class="btn btn-outline-primary" type="button" id="visitOriginalUrl">Visitar</button>
                             </div>
                         </div>
+                        
+                        <!-- Información de depuración 
+                            <div class="debug-info" id="debugInfo"></div>-->
                     </div>
                 </div>
             </div>
@@ -273,9 +344,9 @@
             <div class="card-body">
                 <p>RAKURL Security (RANDOM ACCESS KEY URL SECURITY) es una aplicación que te permite proteger y cifrar enlaces.</p>
                 <ol>
-                    <li><strong>Proteger un enlace:</strong> Ingresa la URL que deseas proteger. RAKURL Security generará automáticamente un archivo .key con números aleatorios.</li>
-                    <li><strong>Generar enlace protegido:</strong> RAKURL Security creará un enlace protegido que contiene la URL original cifrada con el archivo .key generado.</li>
-                    <li><strong>Acceder al enlace:</strong> Para acceder al enlace original, necesitarás el enlace protegido y el archivo .key que generó RAKURL Security al protegerlo.</li>
+                    <li><strong>Proteger un enlace:</strong> Ingresa la URL que deseas proteger. RAKURL Security generará automáticamente un archivo .key con números aleatorios o podrás usar una contraseña.</li>
+                    <li><strong>Generar enlace protegido:</strong> RAKURL Security creará un enlace protegido que contiene la URL original cifrada con el método seleccionado.</li>
+                    <li><strong>Acceder al enlace:</strong> Para acceder al enlace original, necesitarás el enlace protegido y el método de acceso que generó RAKURL Security al protegerlo.</li>
                 </ol>
                 <p class="mb-0"><strong>Nota:</strong> Toda la encriptación y desencriptación se realiza localmente en tu dispositivo. No se envía ninguna información a servidores externos, esto es completamente anónimo.</p>
             </div>
@@ -286,9 +357,40 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script>
+        // Constantes para números mágicos
+        const KEY_FILE_SIZE_BYTES = 12000;
+        const PBKDF2_ITERATIONS = 10000;
+        
+        // Estado de la aplicación encapsulado
+        const appState = {
+            generatedKeyFile: null
+        };
+        
         document.addEventListener('DOMContentLoaded', function() {
             // Configurar área de arrastrar y soltar para acceso
             setupFileDropArea('fileDropAreaAccess', 'keyFileInputAccess');
+            
+            // Configurar eventos para cambiar entre métodos de protección
+            document.getElementById('keyMethod').addEventListener('change', function() {
+                document.querySelector('.key-method-section').style.display = 'block';
+                document.querySelector('.password-section').style.display = 'none';
+            });
+            
+            document.getElementById('passwordMethod').addEventListener('change', function() {
+                document.querySelector('.key-method-section').style.display = 'none';
+                document.querySelector('.password-section').style.display = 'block';
+            });
+            
+            // Configurar eventos para cambiar entre métodos de acceso
+            document.getElementById('keyAccessMethod').addEventListener('change', function() {
+                document.querySelector('.key-access-section').style.display = 'block';
+                document.querySelector('.password-access-section').style.display = 'none';
+            });
+            
+            document.getElementById('passwordAccessMethod').addEventListener('change', function() {
+                document.querySelector('.key-access-section').style.display = 'none';
+                document.querySelector('.password-access-section').style.display = 'block';
+            });
             
             // Botón para proteger enlace
             document.getElementById('protectBtn').addEventListener('click', protectUrl);
@@ -359,7 +461,7 @@
                     // Verificar si el archivo tiene extensión .key
                     const file = files[0];
                     if (!file.name.toLowerCase().endsWith('.key')) {
-                        alert('Por favor, selecciona un archivo con extensión .key');
+                        showError('accessErrorKey', 'Por favor, selecciona un archivo con extensión .key');
                         return;
                     }
                     
@@ -373,7 +475,7 @@
                 if (this.files.length > 0) {
                     const file = this.files[0];
                     if (!file.name.toLowerCase().endsWith('.key')) {
-                        alert('Por favor, selecciona un archivo con extensión .key');
+                        showError('accessErrorKey', 'Por favor, selecciona un archivo con extensión .key');
                         this.value = ''; // Limpiar el input
                         return;
                     }
@@ -387,13 +489,24 @@
             fileMsg.textContent = `Archivo seleccionado: ${fileName}`;
         }
         
-        // Variable global para almacenar el archivo .key generado
-        let generatedKeyFile = null;
+        // Función para mostrar errores
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.style.display = 'block';
+            if (message) {
+                errorElement.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${message}`;
+            }
+        }
         
-        // Función para generar un archivo .key con 12000 números aleatorios binarios
+        // Función para ocultar errores
+        function hideError(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+        
+        // Función para generar un archivo .key con números aleatorios binarios
         function generateKeyFile() {
-            // Crear un array de 12000 bytes aleatorios
-            const keyArray = new Uint8Array(12000);
+            // Crear un array de bytes aleatorios
+            const keyArray = new Uint8Array(KEY_FILE_SIZE_BYTES);
             window.crypto.getRandomValues(keyArray);
             
             // Crear un blob con los datos
@@ -404,29 +517,29 @@
             const fileName = `rakurl_key_${timestamp}.key`;
             
             // Almacenar el archivo para descarga posterior
-            generatedKeyFile = {
+            appState.generatedKeyFile = {
                 blob: blob,
                 name: fileName,
                 data: keyArray
             };
             
-            return generatedKeyFile;
+            return appState.generatedKeyFile;
         }
         
         // Función para descargar el archivo .key
         function downloadKeyFile() {
-            if (!generatedKeyFile) {
-                alert('No hay ningún archivo .key para descargar');
+            if (!appState.generatedKeyFile) {
+                showError('protectErrorKey', 'No hay ningún archivo .key para descargar');
                 return;
             }
             
             // Crear una URL para el blob
-            const url = URL.createObjectURL(generatedKeyFile.blob);
+            const url = URL.createObjectURL(appState.generatedKeyFile.blob);
             
             // Crear un enlace temporal para la descarga
             const a = document.createElement('a');
             a.href = url;
-            a.download = generatedKeyFile.name;
+            a.download = appState.generatedKeyFile.name;
             document.body.appendChild(a);
             a.click();
             
@@ -437,7 +550,7 @@
             }, 100);
         }
         
-        // Función para obtener la clave a partir de un archivo
+        // Función para obtener la clave a partir de un archivo (usando SHA-256)
         async function getFileAsKey(fileInput) {
             return new Promise((resolve, reject) => {
                 if (!fileInput.files || fileInput.files.length === 0) {
@@ -456,17 +569,13 @@
                 const reader = new FileReader();
                 
                 reader.onload = function(event) {
-                    // Convertir el contenido del archivo a una cadena hexadecimal
+                    // Convertir el contenido del archivo a un WordArray de CryptoJS
                     const arrayBuffer = event.target.result;
-                    const bytes = new Uint8Array(arrayBuffer);
-                    let hex = '';
+                    const wordArray = CryptoJS.lib.WordArray.create(arrayBuffer);
                     
-                    for (let i = 0; i < bytes.length; i++) {
-                        hex += bytes[i].toString(16).padStart(2, '0');
-                    }
-                    
-                    // Usar solo los primeros 256 caracteres como clave
-                    resolve(hex.substring(0, 256));
+                    // Calcular el hash SHA-256 de todo el archivo
+                    const hash = CryptoJS.SHA256(wordArray);
+                    resolve(hash.toString(CryptoJS.enc.Hex));
                 };
                 
                 reader.onerror = function() {
@@ -477,106 +586,257 @@
             });
         }
         
-        // Función para obtener la clave a partir de datos binarios
+        // Función para obtener la clave a partir de datos binarios (usando SHA-256)
         function getDataAsKey(data) {
-            let hex = '';
+            // Convertir el array de bytes a un WordArray de CryptoJS
+            const wordArray = CryptoJS.lib.WordArray.create(data);
             
-            for (let i = 0; i < data.length; i++) {
-                hex += data[i].toString(16).padStart(2, '0');
+            // Calcular el hash SHA-256 de todo el archivo
+            const hash = CryptoJS.SHA256(wordArray);
+            return hash.toString(CryptoJS.enc.Hex);
+        }
+        
+        // Función para derivar clave a partir de contraseña usando PBKDF2
+        function deriveKeyFromPassword(password, salt) {
+            return CryptoJS.PBKDF2(password, salt, {
+                keySize: 256 / 32, // 256 bits
+                iterations: PBKDF2_ITERATIONS
+            }).toString(CryptoJS.enc.Hex);
+        }
+        
+        // Función para cifrar URL con IV explícito
+        function encryptUrl(url, key) {
+            // Convertir la clave de hexadecimal a WordArray
+            const keyWordArray = CryptoJS.enc.Hex.parse(key);
+            
+            // Generar un IV aleatorio de 16 bytes (128 bits)
+            const iv = CryptoJS.lib.WordArray.random(16);
+            
+            // Cifrar la URL usando AES con modo CBC y PKCS7 padding
+            const encrypted = CryptoJS.AES.encrypt(url, keyWordArray, { 
+                iv: iv,
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7
+            });
+            
+            // Obtener el texto cifrado como WordArray
+            const ciphertext = encrypted.ciphertext;
+            
+            // Combinar IV y texto cifrado
+            const combined = iv.clone().concat(ciphertext);
+            
+            // Convertir a Base64 y hacer seguro para URL
+            let base64 = combined.toString(CryptoJS.enc.Base64);
+            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        }
+        
+        // Función para descifrar URL con IV explícito
+        function decryptUrl(encryptedData, key) {
+            try {
+                // Convertir la clave de hexadecimal a WordArray
+                const keyWordArray = CryptoJS.enc.Hex.parse(key);
+                
+                // Convertir de URL-safe a Base64 estándar
+                let base64 = encryptedData.replace(/-/g, '+').replace(/_/g, '/');
+                
+                // Añadir padding si es necesario
+                while (base64.length % 4) {
+                    base64 += '=';
+                }
+                
+                // Parsear el Base64
+                const combined = CryptoJS.enc.Base64.parse(base64);
+                
+                // Extraer IV (primeros 16 bytes) y ciphertext (el resto)
+                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4)); // 16 bytes = 4 words de 32 bits
+                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4));
+                
+                // Descifrar
+                const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, keyWordArray, { 
+                    iv: iv,
+                    mode: CryptoJS.mode.CBC,
+                    padding: CryptoJS.pad.Pkcs7
+                });
+                
+                return decrypted.toString(CryptoJS.enc.Utf8);
+            } catch (error) {
+                console.error('Error descifrando:', error);
+                return null;
             }
-            
-            // Usar solo los primeros 256 caracteres como clave
-            return hex.substring(0, 256);
         }
         
         async function protectUrl() {
             const urlInput = document.getElementById('urlInput');
             const resultContainer = document.getElementById('protectResult');
             const errorUrl = document.getElementById('protectErrorUrl');
+            const errorKey = document.getElementById('protectErrorKey');
             const successMsg = document.getElementById('protectSuccess');
             const keyInfo = document.getElementById('keyInfo');
+            const passwordInput = document.getElementById('passwordInput');
+            const keyMethod = document.getElementById('keyMethod').checked;
             
             // Ocultar mensajes anteriores
             resultContainer.style.display = 'none';
-            errorUrl.style.display = 'none';
+            hideError('protectErrorUrl');
+            hideError('protectErrorKey');
             successMsg.style.display = 'none';
             keyInfo.style.display = 'none';
             
             // Validar URL
             if (!urlInput.value) {
-                errorUrl.style.display = 'block';
+                showError('protectErrorUrl', 'La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.');
                 return;
             }
             
             try {
-                // Generar archivo .key
-                const keyFile = generateKeyFile();
+                let key;
+                let salt = null;
                 
-                // Obtener clave del archivo generado
-                const key = getDataAsKey(keyFile.data);
+                if (keyMethod) {
+                    // Generar archivo .key
+                    const keyFile = generateKeyFile();
+                    
+                    // Obtener clave del archivo generado usando SHA-256
+                    key = getDataAsKey(keyFile.data);
+                } else {
+                    // Validar contraseña
+                    if (!passwordInput.value) {
+                        showError('protectErrorKey', 'Por favor, ingresa una contraseña para proteger el enlace.');
+                        return;
+                    }
+                    
+                    // Generar salt aleatorio
+                    salt = CryptoJS.lib.WordArray.random(16);
+                    
+                    // Derivar clave de la contraseña usando PBKDF2
+                    key = deriveKeyFromPassword(passwordInput.value, salt);
+                }
                 
-                // Cifrar la URL
-                const encrypted = CryptoJS.AES.encrypt(urlInput.value, key).toString();
+                // Cifrar la URL con IV explícito
+                const encrypted = encryptUrl(urlInput.value, key);
                 
                 // Crear URL protegida (usando la URL actual como base)
-                const protectedUrl = `${window.location.href.split('#')[0]}#${encodeURIComponent(encrypted)}`;
+                let protectedUrl;
+                if (salt) {
+                    // Si usamos contraseña, incluir el salt en la URL
+                    const saltBase64 = salt.toString(CryptoJS.enc.Base64).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+                    protectedUrl = `${window.location.href.split('#')[0]}#${saltBase64}.${encrypted}`;
+                } else {
+                    protectedUrl = `${window.location.href.split('#')[0]}#${encrypted}`;
+                }
                 
                 // Mostrar resultado
                 document.getElementById('protectedUrl').value = protectedUrl;
                 resultContainer.style.display = 'block';
                 successMsg.style.display = 'block';
-                keyInfo.style.display = 'block';
+                
+                if (keyMethod) {
+                    keyInfo.style.display = 'block';
+                }
                 
             } catch (error) {
                 console.error('Error al proteger la URL:', error);
-                alert('Ocurrió un error al proteger la URL con RAKURL Security. Por favor, intenta nuevamente.');
+                showError('protectErrorKey', 'Ocurrió un error al proteger la URL con RAKURL Security. Por favor, intenta nuevamente.');
             }
         }
         
         async function accessUrl() {
             const protectedUrlInput = document.getElementById('protectedUrlInput');
             const keyFileInput = document.getElementById('keyFileInputAccess');
+            const accessPasswordInput = document.getElementById('accessPasswordInput');
             const resultContainer = document.getElementById('accessResult');
             const errorUrl = document.getElementById('accessErrorUrl');
             const errorKey = document.getElementById('accessErrorKey');
             const successMsg = document.getElementById('accessSuccess');
+            const keyAccessMethod = document.getElementById('keyAccessMethod').checked;
+            const debugInfo = document.getElementById('debugInfo');
             
             // Ocultar mensajes anteriores
             resultContainer.style.display = 'none';
-            errorUrl.style.display = 'none';
-            errorKey.style.display = 'none';
+            hideError('accessErrorUrl');
+            hideError('accessErrorKey');
             successMsg.style.display = 'none';
+            debugInfo.style.display = 'none';
             
             // Validar URL protegida
             if (!protectedUrlInput.value) {
-                errorUrl.style.display = 'block';
+                showError('accessErrorUrl', 'La URL proporcionada no coincide con ningún enlace protegido por RAKURL Security. Verifica la URL e intenta nuevamente.');
                 return;
             }
             
             try {
                 // Extraer el hash de la URL
                 let encrypted;
+                let salt = null;
+                
                 if (protectedUrlInput.value.includes('#')) {
-                    encrypted = decodeURIComponent(protectedUrlInput.value.split('#')[1]);
+                    const hashContent = protectedUrlInput.value.split('#')[1];
+                    
+                    // Verificar si contiene salt (formato: salt.encrypted)
+                    if (hashContent.includes('.')) {
+                        const parts = hashContent.split('.', 2); // Dividir en máximo 2 partes
+                        salt = parts[0];
+                        encrypted = parts[1];
+                    } else {
+                        encrypted = hashContent;
+                    }
                 } else {
                     // Si no hay hash, asumir que toda la URL es el texto cifrado
                     encrypted = protectedUrlInput.value;
                 }
                 
                 if (!encrypted) {
-                    errorUrl.style.display = 'block';
+                    showError('accessErrorUrl', 'La URL proporcionada no coincide con ningún enlace protegido por RAKURL Security. Verifica la URL e intenta nuevamente.');
                     return;
                 }
                 
-                // Obtener clave del archivo
-                const key = await getFileAsKey(keyFileInput);
+                let key;
+                
+                if (keyAccessMethod) {
+                    // Obtener clave del archivo usando SHA-256
+                    key = await getFileAsKey(keyFileInput);
+                } else {
+                    // Validar contraseña
+                    if (!accessPasswordInput.value) {
+                        showError('accessErrorKey', 'Por favor, ingresa la contraseña para acceder al enlace.');
+                        return;
+                    }
+                    
+                    // Si no hay salt, no podemos usar contraseña
+                    if (!salt) {
+                        showError('accessErrorKey', 'Este enlace no fue protegido con contraseña. Por favor, usa el método de archivo .key.');
+                        return;
+                    }
+                    
+                    // Convertir salt de URL-safe a Base64 estándar
+                    let saltBase64 = salt.replace(/-/g, '+').replace(/_/g, '/');
+                    while (saltBase64.length % 4) {
+                        saltBase64 += '=';
+                    }
+                    
+                    // Parsear el salt
+                    const saltWordArray = CryptoJS.enc.Base64.parse(saltBase64);
+                    
+                    // Derivar clave de la contraseña usando PBKDF2
+                    key = deriveKeyFromPassword(accessPasswordInput.value, saltWordArray);
+                    
+                    // Depuración
+                    debugInfo.innerHTML = `
+                        <strong>Depuración:</strong><br>
+                        Salt original: ${salt}<br>
+                        Salt convertido: ${saltBase64}<br>
+                        Contraseña: ${accessPasswordInput.value}<br>
+                        Clave derivada: ${key}<br>
+                        Texto cifrado: ${encrypted}
+                    `;
+                    debugInfo.style.display = 'block';
+                }
                 
                 // Descifrar la URL
-                const decrypted = CryptoJS.AES.decrypt(encrypted, key);
-                const originalUrl = decrypted.toString(CryptoJS.enc.Utf8);
+                const originalUrl = decryptUrl(encrypted, key);
                 
                 if (!originalUrl) {
-                    errorKey.style.display = 'block';
+                    showError('accessErrorKey', 'La llave ingresada es incorrecta o el archivo no es un .key válido. Asegúrate de usar el método de acceso correcto generado por RAKURL Security.');
                     return;
                 }
                 
@@ -584,10 +844,11 @@
                 document.getElementById('originalUrl').value = originalUrl;
                 resultContainer.style.display = 'block';
                 successMsg.style.display = 'block';
+                debugInfo.style.display = 'none';
                 
             } catch (error) {
                 console.error('Error al acceder a la URL:', error);
-                errorKey.style.display = 'block';
+                showError('accessErrorKey', 'La llave ingresada es incorrecta o el archivo no es un .key válido. Asegúrate de usar el método de acceso correcto generado por RAKURL Security.');
             }
         }
         
