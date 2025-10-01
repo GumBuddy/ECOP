@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuestionario Interactivo de Parasitología</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .case-study {
+            background-color: #fefce8; /* yellow-50 */
+            border-left: 4px solid #facc15; /* yellow-400 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+        }
+        .case-study h3 {
+            color: #ca8a04; /* yellow-600 */
+            font-weight: 700;
+        }
+        .case-study p {
+            color: #78350f; /* yellow-900 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 flex items-center justify-center min-h-screen p-4">
+
+    <main class="bg-white rounded-2xl shadow-2xl p-6 md:p-10 w-full max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">Cuestionario de Parasitología</h1>
+            <p class="text-gray-600 mt-2">Facultad de Ciencias Agropecuarias - Enfermedades Parasitarias Fase 24-1</p>
+        </header>
+
+        <div id="quiz-container">
+            <div id="progress-bar-container" class="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300 ease-in-out" style="width: 0%"></div>
+            </div>
+            <p id="progress-text" class="text-center text-sm text-gray-500 mb-6">Pregunta 1 de 25</p>
+
+            <div id="case-study-container" class="case-study mb-6 hidden">
+                <h3 id="case-study-title" class="text-lg"></h3>
+                <p id="case-study-description" class="mt-2"></p>
+            </div>
+
+            <div class="question-block bg-gray-50 p-6 rounded-xl border border-gray-200">
+                <p id="question-text" class="font-semibold text-lg min-h-[3em]"></p>
+                <div id="options-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5">
+                    <!-- Opciones se insertarán aquí -->
+                </div>
+                <p id="feedback" class="feedback mt-4 text-sm font-medium min-h-[1.25em]"></p>
+            </div>
+
+            <div class="navigation-container text-right mt-6">
+                <button id="next-button" class="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Siguiente
+                </button>
+            </div>
+        </div>
+
+        <div id="results-container" class="text-center mt-10 hidden">
+            <h2 class="text-2xl font-bold text-gray-800">¡Cuestionario completado!</h2>
+            <p class="text-xl mt-4">Tu puntuación final es: <span id="score" class="font-bold text-indigo-600"></span></p>
+            <button id="reset-button" class="mt-8 bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg shadow-md hover:bg-indigo-700 transition-transform transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50">
+                Intentar de nuevo
+            </button>
+        </div>
+
+    </main>
+
+    <script>
+        // --- ELEMENTOS DEL DOM ---
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results-container');
+        const scoreElement = document.getElementById('score');
+        const resetButton = document.getElementById('reset-button');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const caseStudyContainer = document.getElementById('case-study-container');
+        const caseStudyTitle = document.getElementById('case-study-title');
+        const caseStudyDescription = document.getElementById('case-study-description');
+        const questionText = document.getElementById('question-text');
+        const optionsGrid = document.getElementById('options-grid');
+        const feedback = document.getElementById('feedback');
+        const nextButton = document.getElementById('next-button');
+
+        // --- DATOS DEL CUESTIONARIO ---
+        const questions = [
+            { question: "1. Este factor biótico participa en la ecología parasitaria al afectar la distribución y la accesibilidad de los agentes parasitarios, sobre todo en helmintos.", options: ["Clima", "Fauna", "Vector", "Reservorio"], answer: "Vector" },
+            { question: "2. Esta práctica zootécnica ocasiona un menor contacto entre los agentes parasitarios y sus hospederos debido a la destrucción de la infección de los pastos.", options: ["Pastoreo rotacional", "Pastoreo libre", "Pastoreo intensivo", "Pastoreo permanente"], answer: "Pastoreo rotacional" },
+            { question: "3. Examen de las heces fecales que usa un líquido de menos densidad que los elementos parasitarios, es sencillo económico y específico para formas parasitarias de elevada densidad.", options: ["Frotis", "Dilución", "Flotación", "Sedimentación"], answer: "Sedimentación" },
+            { question: "4. Patogenicidad parasitaria caracterizada por sustraer del huésped una gran cantidad de sustancias nutritivas que causan desequilibrio en el hospedero.", options: ["Traumática", "Mecánica", "Lítica", "Expoliatriz"], answer: "Expoliatriz" },
+            { question: "5. Acción patógena que consiste en el daño ocasionado por los órganos accesorios de los parásitos que destruyen la integridad de los tejidos de los hospederos.", options: ["Histiófaga", "Infectante", "Mecánica", "Traumática"], answer: "Histiófaga" },
+            { question: "6. Son los diferentes ámbitos de acción en donde se puede ejercer control parasitario.", options: ["Individuo, Unidad de producción", "Individuo, Pradera", "Unidad de producción, Corral", "Individuo, Edificación"], answer: "Individuo, Pradera" },
+            { question: "7. Dentro de las acciones de control de las parasitosis tomando en cuenta el medio podemos encontrar:", options: ["Suelo, Pradera", "Desparasitación selectiva", "Alternar especias", "Usar ectoparásitos"], answer: "Alternar especias" },
+            { question: "8. El fenómeno de la resistencia antihelmíntica ocasiona que los parásitos no se vean afectados al realizar la desparasitación calendaria y se fomenta debido a:", options: ["Desparasitar por promedio de peso", "Rotación de desparasitantes", "Dosificar en demasía", "Desparasitación sistemática"], answer: "Desparasitar por promedio de peso" },
+            { question: "9. La acción de desparasitar a los animales que lo requieren de manera correcta, tomar en cuenta la epidemiología de las parasitosis y manejar el medio ambiente a nuestro favor nos lleva a lograr:", options: ["Calendario de desparasitación", "Desparasitación selectiva", "Control integral", "Control químico adecuado"], answer: "Control integral" },
+            { question: "10. El uso de especies biológicas patógenas para los parásitos que controlen sus poblaciones y disminuyan la dosis infección total se conoce como:", options: ["Control genético", "Lucha biológica", "Control parasitario", "Hiperparasitismo"], answer: "Lucha biológica" },
+            { question: "11. Sistema que nos permite abordar las enfermedades de manera sistemática para llevar un control adecuado de los brotes y cerrar casos clínicos.", options: ["Lista de problemas", "Jerarquización de problemas", "Manejo de puntos críticos", "Expediente clínico orientado a problemas"], answer: "Expediente clínico orientado a problemas" },
+            { question: "12. Es un apartado dentro de las condiciones climáticas que se debe considerar al momento de establecer los programas de control para la babesiosis.", options: ["Promedio de precipitación pluvial", "Cambios estacionales", "Radiación solar", "Proximidad de fuentes de agua"], answer: "Cambios estacionales" },
+            { question: "13. Es una forma de manejo de los animales en campo que evita el contacto de los parásitos con sus hospederos definitivos o intermediarios o los reduce drásticamente para evitar la manifestación clínica de la enfermedad.", options: ["Nomadeo", "Cambios estacionales", "Desparasitación", "Prácticas zootécnicas"], answer: "Prácticas zootécnicas" },
+            {
+                question: "14. ¿La mejor técnica diagnóstica para llegar al diagnóstico definitivo?", options: ["Flotación en solución saturada", "McMaster", "Cultivo de heces", "Frotis sanguínea"], answer: "Cultivo de heces",
+                caseStudy: { title: "CASO CLÍNICO: PARASITOSIS DE RUMIANTES", description: "En una unidad de producción bovina de Don Carlos se presenta en terneros jóvenes de unas semanas a seis meses de edad, debilidad, diarrea acuosa y problemas de diarrea con estrías de sangre... Se reporta la presencia de ooquistes de diferente tamaño... Los animales no han sido movidos y se ha usado ivermectina para problemas de parásitos." }
+            },
+            { question: "15. ¿Cuál es el tratamiento químico de elección, dosis en mg/kg pv?", options: ["Sulfoamidas a dosis de 25 mg/kg", "Metronidazol a dosis de 50 mg/kg", "Amprolio a dosis de 25 mg/kg", "Lasalocid a dosis de 1 mg/kg"], answer: "Amprolio a dosis de 25 mg/kg" },
+            { question: "16. ¿Cuál es el principal daño ocasionado por los coccidios en bovinos?", options: ["Diarrea sanguinolenta", "Destrucción de células epiteliales", "Pérdida de peso", "Efecto nervioso"], answer: "Destrucción de células epiteliales" },
+            {
+                question: "17. ¿Mejor técnica diagnóstica para llegar al diagnóstico definitivo?", options: ["ELISA", "Frotis tinción Giemsa", "Tinción de Gram", "Inmunofluorescencia"], answer: "Frotis tinción Giemsa",
+                caseStudy: { title: "CASO CLÍNICO: SEMENTAL", description: "En la unidad de producción bovina el semental se presentan problemas hipertermia, astenia, anorexia, tristeza y aparece ictérico ha presentado signos de anemia con hemoglobinuria... el productor menciona haber adquirido un lote de animales nuevos." }
+            },
+            { question: "18. ¿Cuál es el tratamiento químico de elección, dosis en mg/kg pv?", options: ["Amprolio 10 mg/kg", "Sulfas 33 mg/kg", "Carbamato imidazol 1.5 mg/kg", "Metronidazol a dosis de 50 mg/kg"], answer: "Carbamato imidazol 1.5 mg/kg" },
+            { question: "19. ¿Cuál es el principal daño ocasionado por piroplásmidos en bovinos?", options: ["Fiebre intermitente", "Destrucción de células epiteliales", "Anemia", "Coagulación intravascular diseminada"], answer: "Anemia" },
+            {
+                question: "20. ¿Mejor técnica diagnóstica para llegar al diagnóstico definitivo?", options: ["Frotis", "Necropsia in situ", "Enzimoinmunoanálisis de adsorción", "Inmunofluorescencia indirecta"], answer: "Necropsia in situ",
+                caseStudy: { title: "CASO CLÍNICO: PARASITOSIS DE CERDOS (NEONATOS)", description: "Un productor de cerdos se comunica contigo y te comenta que sus cerdos neonatos hasta aproximadamente los quince días presentan fiebre, tos húmeda, jadeo, pelo hirsuto con presencia de heces secas o pastosas... a la necropsia se observan focos hemorrágicos y petequiales y manchas blanquecinas en el hígado." }
+            },
+            { question: "21. ¿Cuál es el tratamiento químico de elección, dosis en mg/kg pv?", options: ["Ivermectina dosis: 300 mcg/kg", "Doramectina dosis: 300 mcg/kg", "Metronidazol dosis: 250 mg/kg", "Pirantel dosis: 10 mg/kg"], answer: "Ivermectina dosis: 300 mcg/kg" },
+            { question: "22. ¿Cuál es el principal daño ocasionado por los coccidios en cerdos?", options: ["Enteritis intersticial", "Granulomas", "Neumonía", "Fiebre de más de 40°"], answer: "Enteritis intersticial" },
+            {
+                question: "23. ¿Mejor técnica diagnóstica para llegar al diagnóstico definitivo?", options: ["Método compresión de tejido", "ELISA", "Digestión artificial", "Digestión artificial"], answer: "Digestión artificial",
+                caseStudy: { title: "CASO CLÍNICO: PARASITOSIS DE CERDOS (PASTOREO)", description: "Tus vecinos tienen una granja de cerdos en pastoreo... Pocos cerdos se mueren y algunos de forma súbita, los demás presentan incoordinación, temblores... En la necropsia se aprecian quistes en el diafragma, lengua, maseteros, corazón y larvas." }
+            },
+            { question: "24. ¿Cuál es el tratamiento químico de elección, dosis en mg/kg pv?", options: ["Ivermectina: 150 Mcg/kg", "Toltrazuril dosis: 20 mg/kg", "Tres sulfas dosis: 140 Mg/kg", "Flubendazol dosis: 1.2 mg/kg"], answer: "Tres sulfas dosis: 140 Mg/kg" },
+            { question: "25. ¿Cuál es el principal daño ocasionado por los coccidios en cerdos?", options: ["Daño al sistema nervioso", "Fiebre", "Daño a vellosidades intestinales", "Mialgia y dolor de articulaciones"], answer: "Mialgia y dolor de articulaciones" },
+        ];
+        
+        // --- ESTADO DEL CUESTIONARIO ---
+        let currentQuestionIndex = 0;
+        let score = 0;
+
+        // --- FUNCIONES LÓGICAS ---
+
+        function startQuiz() {
+            currentQuestionIndex = 0;
+            score = 0;
+            resultsContainer.classList.add('hidden');
+            quizContainer.classList.remove('hidden');
+            nextButton.textContent = 'Siguiente';
+            showQuestion();
+        }
+
+        function showQuestion() {
+            // Resetear estado de la pregunta anterior
+            optionsGrid.innerHTML = '';
+            feedback.textContent = '';
+            nextButton.disabled = true;
+
+            // Obtener datos de la pregunta actual
+            const currentQuestion = questions[currentQuestionIndex];
+            
+            // Actualizar progreso
+            const progressPercentage = ((currentQuestionIndex) / questions.length) * 100;
+            progressBar.style.width = `${progressPercentage}%`;
+            progressText.textContent = `Pregunta ${currentQuestionIndex + 1} de ${questions.length}`;
+
+            // Mostrar caso clínico si existe
+            if (currentQuestion.caseStudy) {
+                caseStudyContainer.classList.remove('hidden');
+                caseStudyTitle.textContent = currentQuestion.caseStudy.title;
+                caseStudyDescription.textContent = currentQuestion.caseStudy.description;
+            } else {
+                caseStudyContainer.classList.add('hidden');
+            }
+
+            // Mostrar texto de la pregunta
+            questionText.textContent = currentQuestion.question;
+
+            // Crear y mostrar botones de opción
+            currentQuestion.options.forEach(option => {
+                const button = document.createElement('button');
+                button.textContent = option;
+                button.className = 'option-btn w-full text-left p-4 rounded-lg bg-white border-2 border-gray-300 hover:bg-indigo-50 hover:border-indigo-400 transition-colors duration-200';
+                button.onclick = () => selectAnswer(button, currentQuestion.answer);
+                optionsGrid.appendChild(button);
+            });
+        }
+
+        function selectAnswer(selectedButton, correctAnswer) {
+            const allButtons = optionsGrid.querySelectorAll('.option-btn');
+            allButtons.forEach(btn => btn.disabled = true); // Desactivar todos los botones
+
+            // Comprobar respuesta y dar feedback visual
+            if (selectedButton.textContent.trim() === correctAnswer) {
+                score++;
+                selectedButton.classList.remove('border-gray-300');
+                selectedButton.classList.add('bg-green-100', 'border-green-500', 'ring-2', 'ring-green-400');
+                feedback.textContent = '¡Correcto!';
+                feedback.className = 'feedback mt-4 text-sm font-medium text-green-600';
+            } else {
+                selectedButton.classList.remove('border-gray-300');
+                selectedButton.classList.add('bg-red-100', 'border-red-500', 'ring-2', 'ring-red-400');
+                feedback.textContent = `Incorrecto. La respuesta correcta es: ${correctAnswer}`;
+                feedback.className = 'feedback mt-4 text-sm font-medium text-red-600';
+                // Resaltar la respuesta correcta
+                allButtons.forEach(btn => {
+                    if (btn.textContent.trim() === correctAnswer) {
+                        btn.classList.add('bg-green-100', 'border-green-500');
+                    }
+                });
+            }
+
+            // Preparar para la siguiente pregunta
+            if (currentQuestionIndex < questions.length - 1) {
+                nextButton.textContent = 'Siguiente';
+            } else {
+                nextButton.textContent = 'Ver resultados';
+            }
+            nextButton.disabled = false;
+        }
+
+        function handleNext() {
+            currentQuestionIndex++;
+            if (currentQuestionIndex < questions.length) {
+                showQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            quizContainer.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+            scoreElement.textContent = `${score} / ${questions.length}`;
+            progressBar.style.width = '100%';
+        }
+        
+        // --- EVENT LISTENERS ---
+        nextButton.addEventListener('click', handleNext);
+        resetButton.addEventListener('click', startQuiz);
+
+        // --- INICIAR CUESTIONARIO ---
+        startQuiz();
+    </script>
+</body>
+</html>
+
