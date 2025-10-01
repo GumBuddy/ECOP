@@ -152,18 +152,6 @@
             color: white;
             background-color: #6c5ce7;
         }
-        .debug-info {
-            display: none;
-            margin-top: 15px;
-            padding: 10px;
-            background-color: #f5f5f5;
-            border-radius: 5px;
-            font-family: monospace;
-            font-size: 12px;
-            color: #333;
-            max-height: 200px;
-            overflow-y: auto;
-        }
     </style>
 </head>
 <body>
@@ -329,9 +317,6 @@
                                 <button class="btn btn-outline-primary" type="button" id="visitOriginalUrl">Visitar</button>
                             </div>
                         </div>
-                        
-                        <!-- Información de depuración -->
-                        <div class="debug-info" id="debugInfo"></div>
                     </div>
                 </div>
             </div>
@@ -749,14 +734,12 @@
             const errorKey = document.getElementById('accessErrorKey');
             const successMsg = document.getElementById('accessSuccess');
             const keyAccessMethod = document.getElementById('keyAccessMethod').checked;
-            const debugInfo = document.getElementById('debugInfo');
             
             // Ocultar mensajes anteriores
             resultContainer.style.display = 'none';
             hideError('accessErrorUrl');
             hideError('accessErrorKey');
             successMsg.style.display = 'none';
-            debugInfo.style.display = 'none';
             
             // Validar URL protegida
             if (!protectedUrlInput.value) {
@@ -819,17 +802,6 @@
                     
                     // Derivar clave de la contraseña usando PBKDF2
                     key = deriveKeyFromPassword(accessPasswordInput.value, saltWordArray);
-                    
-                    // Depuración
-                    debugInfo.innerHTML = `
-                        <strong>Depuración:</strong><br>
-                        Salt original: ${salt}<br>
-                        Salt convertido: ${saltBase64}<br>
-                        Contraseña: ${accessPasswordInput.value}<br>
-                        Clave derivada: ${key}<br>
-                        Texto cifrado: ${encrypted}
-                    `;
-                    debugInfo.style.display = 'block';
                 }
                 
                 // Descifrar la URL
@@ -844,7 +816,6 @@
                 document.getElementById('originalUrl').value = originalUrl;
                 resultContainer.style.display = 'block';
                 successMsg.style.display = 'block';
-                debugInfo.style.display = 'none';
                 
             } catch (error) {
                 console.error('Error al acceder a la URL:', error);
