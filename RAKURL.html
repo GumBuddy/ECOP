@@ -330,6 +330,22 @@
         #protectedUrl {
             display: none;
         }
+        
+        /* Estilo para el mensaje de bienvenida al escanear QR */
+        .welcome-message {
+            display: none;
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--secondary-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .welcome-message h5 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
@@ -445,7 +461,12 @@
                             <div id="qrcode" aria-label="Código QR del enlace protegido"></div>
                             
                             <div class="alert alert-warning mt-3" role="alert">
-                                <strong>Importante:</strong> Guarda este código y tu método de acceso (archivo .key o contraseña). Para acceder al enlace original, solo necesitarás este código y tu método de acceso.
+                                <strong>Importante:</strong> 
+                                <ul class="mb-0">
+                                    <li>Guarda este código y tu método de acceso (archivo .key o contraseña).</li>
+                                    <li>El código QR contiene una URL que lleva directamente a esta página con el código pre-cargado.</li>
+                                    <li>Para acceder al enlace original, solo necesitarás escanear el código QR y proporcionar tu método de acceso.</li>
+                                </ul>
                             </div>
                         </div>
                     </div>
@@ -453,6 +474,11 @@
             </div>
             
             <div class="tab-pane fade" id="access" role="tabpanel" aria-labelledby="access-tab">
+                <div class="welcome-message" id="welcomeMessage">
+                    <h5><i class="bi bi-qr-code-scan me-2" aria-hidden="true"></i>¡Bienvenido desde un código QR!</h5>
+                    <p>El código de acceso ha sido cargado automáticamente. Solo necesitas proporcionar tu método de acceso (archivo .key o contraseña) para desbloquear el enlace.</p>
+                </div>
+                
                 <div class="card">
                     <div class="card-header">
                         Acceder a un enlace protegido
@@ -550,6 +576,7 @@
                 <ol>
                     <li><strong>Proteger un enlace:</strong> Ingresa la URL que deseas proteger. RAKURL Security generará automáticamente un archivo .key con números aleatorios o podrás usar una contraseña.</li>
                     <li><strong>Generar código de acceso:</strong> RAKURL Security creará un código único que contiene la URL original cifrada con el método seleccionado.</li>
+                    <li><strong>Compartir mediante código QR:</strong> El código QR generado contiene una URL que lleva directamente a esta página con el código pre-cargado, facilitando el acceso.</li>
                     <li><strong>Acceder al enlace:</strong> Para acceder al enlace original, necesitarás el código generado y el método de acceso que generaste al protegerlo.</li>
                 </ol>
                 <p class="mb-0"><strong>Nota:</strong> Toda la encriptación y desencriptación se realiza localmente en tu dispositivo. No se envía ninguna información a servidores externos, esto es completamente anónimo.</p>
@@ -572,7 +599,8 @@
         // Estado de la aplicación encapsulado
         const appState = {
             generatedKeyFile: null,
-            displayUrl: null
+            displayUrl: null,
+            baseUrl: window.location.href.split('#')[0] // URL base sin hash
         };
         
         document.addEventListener('DOMContentLoaded', function() {
@@ -974,7 +1002,7 @@
                     
                     const encrypted = encryptUrl(urlInput.value, key);
                     const payload = createPayload(salt, encrypted);
-                    const realUrl = `${window.location.href.split('#')[0]}#${payload}`;
+                    const realUrl = `${appState.baseUrl}#${payload}`;
                     
                     // Almacenar la URL real en el campo oculto
                     document.getElementById('protectedUrl').value = realUrl;
@@ -985,9 +1013,9 @@
                     resultContainer.style.display = 'block';
                     document.getElementById('protectSuccess').style.display = 'block';
 
-                    // Generar código QR con solo el payload
+                    // Generar código QR con la URL completa que incluye el payload
                     new QRCode(qrcodeContainer, {
-                        text: payload,
+                        text: realUrl,
                         width: 150,
                         height: 150,
                         correctLevel : QRCode.CorrectLevel.H
@@ -1125,10 +1153,18 @@
         window.addEventListener('load', function() {
             const hash = window.location.hash;
             if (hash && hash.length > 1) {
+                // Cambiar a la pestaña de acceso
                 document.getElementById('access-tab').click();
+                
                 // Extraer solo el payload del hash
                 const payload = hash.substring(1);
                 document.getElementById('protectedUrlInput').value = payload;
+                
+                // Mostrar mensaje de bienvenida
+                document.getElementById('welcomeMessage').style.display = 'block';
+                
+                // Hacer scroll hasta la pestaña de acceso
+                document.getElementById('access-tab').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             }
         });
     </script>
