@@ -872,7 +872,7 @@
                             <div id="qrcode" aria-label="Código QR del enlace protegido"></div>
                             
                             <div class="qr-actions">
-                                <button class="btn share-qr-btn" id="shareQrBtn" data-bs-toggle="modal" data-bs-target="#shareModal" aria-describedby="shareQrBtnHelp">
+                                <button class="btn share-qr-btn" id="shareQrBtn" aria-describedby="shareQrBtnHelp">
                                     <i class="bi bi-share me-2" aria-hidden="true"></i>Compartir QR
                                 </button>
                                 <div id="shareQrBtnHelp" class="visually-hidden">Compartir o descargar la imagen del código QR</div>
@@ -1020,7 +1020,7 @@
                 </div>
                 <div class="modal-body">
                     <p>Comparte el código de acceso para que otros puedan acceder al enlace protegido.</p>
-                    <div id="modalQrContainer" style="display:none;">
+                    <div id="modalQrContainer">
                         <img id="modalQrImage" src="" alt="Código QR del enlace protegido" class="img-fluid" style="max-width: 200px; border-radius: 8px;">
                     </div>
                     <div class="share-buttons">
@@ -1169,7 +1169,7 @@
             // Configurar eventos para el modal de compartir
             const shareModal = document.getElementById('shareModal');
             shareModal.addEventListener('shown.bs.modal', function () {
-                setupShareButtons();
+                populateShareModal();
             });
         });
         
@@ -1507,9 +1507,9 @@
         }
         
         /**
-         * Configura los botones para compartir en redes sociales
+         * Rellena el modal de compartir con los datos necesarios
          */
-        function setupShareButtons() {
+        function populateShareModal() {
             // Obtener el payload (código cifrado) del textarea
             const payload = document.getElementById('protectedUrlDisplay').value;
             const qrImage = appState.qrCodeImage;
@@ -1519,6 +1519,10 @@
             // Mensaje personalizado para compartir
             const shareMessage = "RAKURL Security: Este es tu Código de acceso:";
             const fullMessage = `${shareMessage}\n\n${payload}`;
+            
+            // Configurar la imagen del QR en el modal
+            const modalQrImage = document.getElementById('modalQrImage');
+            modalQrImage.src = qrImage;
             
             // Configurar botón de WhatsApp
             const whatsappBtn = document.getElementById('shareWhatsapp');
@@ -1582,30 +1586,55 @@
         }
         
         /**
-         * Comparte o descarga la imagen del código QR.
+         * Comparte el código QR usando la API nativa si está disponible, 
+         * o abre el modal como alternativa.
          */
         async function shareQRCode() {
             const qrContainer = document.getElementById('qrcode');
             const shareBtn = document.getElementById('shareQrBtn');
             const originalBtnText = shareBtn.innerHTML;
-            
+            const realUrl = document.getElementById('protectedUrl').value;
+            const payload = document.getElementById('protectedUrlDisplay').value;
+
+            shareBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
+            shareBtn.disabled = true;
+
             try {
-                // Mostrar indicador de carga
-                shareBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
-                shareBtn.disabled = true;
-                
-                // Convertir el QR a imagen
                 const qrImage = await qrCodeToImage(qrContainer);
                 appState.qrCodeImage = qrImage;
-                
-                // Abrir el modal
-                const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-                shareModal.show();
+
+                const response = await fetch(qrImage);
+                const blob = await response.blob();
+                const file = new File([blob], 'rakurl_qr.png', { type: 'image/png' });
+
+                // Mensaje personalizado para compartir
+                const shareMessage = "RAKURL Security: Este es tu Código de acceso:";
+                const fullMessage = `${shareMessage}\n\n${payload}`;
+
+                // Comprobar si se puede usar la API nativa para compartir archivos
+                if (navigator.share && navigator.canShare({ files: [file] })) {
+                    // Opción 1: Usar la API nativa (la que funciona)
+                    await navigator.share({
+                        title: 'RAKURL Security - Código de Acceso',
+                        text: fullMessage,
+                        files: [file]
+                    });
+                } else {
+                    // Opción 2: El navegador no es compatible, abrir el modal como alternativa
+                    populateShareModal(); // Rellenamos el modal con los datos
+                    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+                    shareModal.show();
+                }
+
             } catch (error) {
-                console.error('Error al procesar el código QR:', error);
-                showError('protectErrorKey', 'No se pudo procesar el código QR. Por favor, intenta nuevamente.');
+                console.error('Error al compartir:', error);
+                if (error.name !== 'AbortError') { // Ignorar si el usuario cancela la acción
+                    // Si hay un error con la API nativa, mostrar el modal como fallback
+                    populateShareModal();
+                    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
+                    shareModal.show();
+                }
             } finally {
-                // Restaurar el botón
                 shareBtn.innerHTML = originalBtnText;
                 shareBtn.disabled = false;
             }
