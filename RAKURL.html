@@ -1,631 +1,716 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAKURL Security - Protección de Enlaces</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-color: #6c5ce7;
-            --primary-hover: #5a4fcf;
-            --primary-disabled: #9d8fd3;
-            --secondary-color: #1976d2;
-            --secondary-hover: #1565c0;
-            --success-color: #2e7d32;
-            --warning-color: #ff8f00;
-            --danger-color: #c62828;
-        }
-        
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            color: #333;
-        }
-        
-        .container {
-            max-width: 800px;
-            margin-top: 50px;
-        }
-        
-        .card {
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            border: none;
-            transition: transform 0.3s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-        }
-        
-        .card-header {
-            background-color: var(--primary-color);
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
-            font-weight: 600;
-            border: none;
-        }
-        
-        .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary:hover {
-            background-color: var(--primary-hover);
-            border-color: var(--primary-hover);
-            transform: translateY(-2px);
-        }
-        
-        .btn-primary:disabled {
-            background-color: var(--primary-disabled);
-            border-color: var(--primary-disabled);
-        }
-        
-        .result-container {
-            display: none;
-            margin-top: 20px;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .tab-content {
-            padding: 20px;
-        }
-        
-        .file-drop-area {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            padding: 30px;
-            border: 2px dashed var(--primary-color);
-            border-radius: 10px;
-            transition: 0.2s;
-            background-color: #f8f7ff;
-            margin-bottom: 20px;
-        }
-        
-        .file-drop-area:hover {
-            background-color: #f0efff;
-        }
-        
-        .file-drop-area.is-active {
-            background-color: #e8e7ff;
-        }
-        
-        .file-msg {
-            font-size: 16px;
-            font-weight: 500;
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-        
-        .file-input {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 100%;
-            cursor: pointer;
-            opacity: 0;
-        }
-        
-        .error-message {
-            display: none;
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 500;
-            animation: shake 0.5s ease;
-        }
-        
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-            20%, 40%, 60%, 80% { transform: translateX(5px); }
-        }
-        
-        .error-key {
-            background-color: #ffebee;
-            color: var(--danger-color);
-            border-left: 4px solid var(--danger-color);
-        }
-        
-        .error-url {
-            background-color: #fff8e1;
-            color: var(--warning-color);
-            border-left: 4px solid var(--warning-color);
-        }
-        
-        .success-message {
-            display: none;
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 8px;
-            background-color: #e8f5e9;
-            color: var(--success-color);
-            border-left: 4px solid var(--success-color);
-            font-weight: 500;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .key-info {
-            display: none;
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: #e3f2fd;
-            border-left: 4px solid var(--secondary-color);
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .key-info h5 {
-            color: var(--secondary-color);
-            margin-bottom: 10px;
-        }
-        
-        .download-btn {
-            background-color: var(--secondary-color);
-            border-color: var(--secondary-color);
-            margin-top: 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .download-btn:hover {
-            background-color: var(--secondary-hover);
-            border-color: var(--secondary-hover);
-            transform: translateY(-2px);
-        }
-        
-        .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        
-        .logo-icon {
-            width: 60px;
-            height: 60px;
-            background-color: var(--primary-color);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-            transition: transform 0.3s ease;
-        }
-        
-        .logo-container:hover .logo-icon {
-            transform: rotate(10deg) scale(1.05);
-        }
-        
-        .password-section {
-            display: none;
-            margin-top: 15px;
-        }
-        
-        .nav-tabs .nav-link {
-            color: var(--primary-color);
-            transition: all 0.3s ease;
-        }
-        
-        .nav-tabs .nav-link:hover {
-            background-color: rgba(108, 92, 231, 0.1);
-        }
-        
-        .nav-tabs .nav-link.active {
-            color: white;
-            background-color: var(--primary-color);
-        }
-        
-        .url-display-container {
-            background-color: #f5f5f5;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #dee2e6;
-        }
-        
-        .url-display {
-            font-family: monospace;
-            font-size: 14px;
-            word-break: break-all;
-            background-color: transparent;
-            border: none;
-            width: 100%;
-            resize: none;
-            outline: none;
-            color: #495057;
-        }
-        
-        .privacy-badge {
-            display: inline-block;
-            background-color: #4caf50;
-            color: white;
-            font-size: 12px;
-            padding: 3px 8px;
-            border-radius: 12px;
-            margin-left: 10px;
-            font-weight: 500;
-        }
-        
-        .input-group-text {
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-        
-        .input-group-text:hover {
-            background-color: rgba(0, 0, 0, 0.05);
-        }
-        
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
-            border-width: 0.15em;
-        }
-        
-        .progress-bar {
-            transition: width .6s ease;
-        }
-        
-        #qrcode {
-            display: none;
-            margin-top: 20px;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: #fff;
-            border: 1px solid #dee2e6;
-            width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAKURL Security - Protección de Enlaces</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --primary-hover: #5a4fcf;
+            --primary-disabled: #9d8fd3;
+            --secondary-color: #1976d2;
+            --secondary-hover: #1565c0;
+            --success-color: #2e7d32;
+            --warning-color: #ff8f00;
+            --danger-color: #c62828;
+            --whatsapp-color: #25D366;
+            --telegram-color: #0088cc;
+            --messenger-color: #00B2FF;
+            --x-color: #000000;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: none;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:disabled {
+            background-color: var(--primary-disabled);
+            border-color: var(--primary-disabled);
+        }
+        
+        .result-container {
+            display: none;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-content {
+            padding: 20px;
+        }
+        
+        .file-drop-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 30px;
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            transition: 0.2s;
+            background-color: #f8f7ff;
+            margin-bottom: 20px;
+        }
+        
+        .file-drop-area:hover {
+            background-color: #f0efff;
+        }
+        
+        .file-drop-area.is-active {
+            background-color: #e8e7ff;
+        }
+        
+        .file-msg {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            cursor: pointer;
+            opacity: 0;
+        }
+        
+        .error-message {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .error-key {
+            background-color: #ffebee;
+            color: var(--danger-color);
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .error-url {
+            background-color: #fff8e1;
+            color: var(--warning-color);
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .success-message {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: #e8f5e9;
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+            font-weight: 500;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .key-info {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--secondary-color);
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .key-info h5 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+        
+        .download-btn {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--secondary-hover);
+            border-color: var(--secondary-hover);
+            transform: translateY(-2px);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-color);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo-container:hover .logo-icon {
+            transform: rotate(10deg) scale(1.05);
+        }
+        
+        .password-section {
+            display: none;
+            margin-top: 15px;
+        }
+        
+        .nav-tabs .nav-link {
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            background-color: rgba(108, 92, 231, 0.1);
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: white;
+            background-color: var(--primary-color);
+        }
+        
+        .url-display-container {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .url-display {
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            background-color: transparent;
+            border: none;
+            width: 100%;
+            resize: none;
+            outline: none;
+            color: #495057;
+        }
+        
+        .privacy-badge {
+            display: inline-block;
+            background-color: #4caf50;
+            color: white;
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+            font-weight: 500;
+        }
+        
+        .input-group-text {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .input-group-text:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
+        }
+        
+        .progress-bar {
+            transition: width .6s ease;
+        }
+        
+        #qrcode {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #fff;
+            border: 1px solid #dee2e6;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: center;
+        }
+        
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .form-check-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+        }
+        
+        /* Mejoras de accesibilidad */
+        .btn:focus, .form-control:focus, .form-check-input:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        
+        /* Mejoras de responsividad */
+        @media (max-width: 768px) {
+            .container {
+                margin-top: 20px;
+                padding: 0 15px;
+            }
+            
+            .card {
+                margin-bottom: 15px;
+            }
+            
+            h1.display-4 {
+                font-size: 2rem;
+            }
+        }
+        
+        /* Ocultar input de URL real */
+        #protectedUrl {
+            display: none;
+        }
+        
+        .welcome-message {
+            display: none;
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--secondary-color);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .welcome-message h5 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+        
+        .share-qr-btn {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .share-qr-btn:hover {
+            background-color: #2e7d32;
+            border-color: #2e7d32;
+            transform: translateY(-2px);
+            color: white;
+        }
+        
+        .qr-actions {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        @media (max-width: 576px) {
+            .qr-actions {
+                flex-direction: column;
+            }
+        }
+
+        .modal-body {
             text-align: center;
         }
-        
-        .form-check-input:checked {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .form-check-input:focus {
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
-        }
-        
-        /* Mejoras de accesibilidad */
-        .btn:focus, .form-control:focus, .form-check-input:focus {
-            outline: 2px solid var(--primary-color);
-            outline-offset: 2px;
-        }
-        
-        /* Mejoras de responsividad */
-        @media (max-width: 768px) {
-            .container {
-                margin-top: 20px;
-                padding: 0 15px;
-            }
-            
-            .card {
-                margin-bottom: 15px;
-            }
-            
-            h1.display-4 {
-                font-size: 2rem;
-            }
-        }
-        
-        /* Ocultar input de URL real */
-        #protectedUrl {
-            display: none;
-        }
-        
-        /* Estilo para el mensaje de bienvenida al escanear QR */
-        .welcome-message {
-            display: none;
-            background-color: #e3f2fd;
-            border-left: 4px solid var(--secondary-color);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            animation: fadeIn 0.5s ease;
-        }
-        
-        .welcome-message h5 {
-            color: var(--secondary-color);
-            margin-bottom: 10px;
-        }
-        
-        /* Estilos para el botón de compartir QR */
-        .share-qr-btn {
-            background-color: var(--success-color);
-            border-color: var(--success-color);
-            color: white;
-            margin-top: 15px;
-            transition: all 0.3s ease;
-        }
-        
-        .share-qr-btn:hover {
-            background-color: #2e7d32;
-            border-color: #2e7d32;
-            transform: translateY(-2px);
-            color: white;
-        }
-        
-        /* Contenedor para los botones de QR */
-        .qr-actions {
+        .share-buttons {
             display: flex;
+            flex-wrap: wrap;
             justify-content: center;
-            gap: 10px;
-            margin-top: 15px;
+            gap: 15px;
+            margin-top: 20px;
         }
-        
-        @media (max-width: 576px) {
-            .qr-actions {
-                flex-direction: column;
-            }
+        .share-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #333;
+            width: 80px;
+            font-size: 12px;
+            transition: transform 0.2s ease;
         }
-    </style>
+        .share-btn:hover {
+            transform: scale(1.1);
+            color: #000;
+        }
+        .share-btn .icon-wrapper {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        .share-btn.whatsapp .icon-wrapper { background-color: var(--whatsapp-color); }
+        .share-btn.telegram .icon-wrapper { background-color: var(--telegram-color); }
+        .share-btn.messenger .icon-wrapper { background-color: var(--messenger-color); }
+        .share-btn.x .icon-wrapper { background-color: var(--x-color); }
+        .share-btn.download .icon-wrapper { background-color: var(--secondary-color); }
+        .share-btn.native-share .icon-wrapper { background-color: #7f8c8d; }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="text-center mb-4">
-            <div class="logo-container">
-                <div class="logo-icon" aria-hidden="true">RAK</div>
-            </div>
-            <h1 class="display-4 fw-bold" style="color: var(--primary-color);">RAKURL Security</h1>
-            <p class="lead">RANDOM ACCESS KEY URL SECURITY</p>
-        </div>
+    <div class="container">
+        <div class="text-center mb-4">
+            <div class="logo-container">
+                <div class="logo-icon" aria-hidden="true">RAK</div>
+            </div>
+            <h1 class="display-4 fw-bold" style="color: var(--primary-color);">RAKURL Security</h1>
+            <p class="lead">RANDOM ACCESS KEY URL SECURITY</p>
+        </div>
 
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="protect-tab" data-bs-toggle="tab" data-bs-target="#protect" type="button" role="tab" aria-controls="protect" aria-selected="true">Proteger Enlace</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="access-tab" data-bs-toggle="tab" data-bs-target="#access" type="button" role="tab" aria-controls="access" aria-selected="false">Acceder a Enlace</button>
-            </li>
-        </ul>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="protect-tab" data-bs-toggle="tab" data-bs-target="#protect" type="button" role="tab" aria-controls="protect" aria-selected="true">Proteger Enlace</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="access-tab" data-bs-toggle="tab" data-bs-target="#access" type="button" role="tab" aria-controls="access" aria-selected="false">Acceder a Enlace</button>
+            </li>
+        </ul>
 
-        <div class="tab-content" id="myTabContent">
-            <div class="tab-pane fade show active" id="protect" role="tabpanel" aria-labelledby="protect-tab">
-                <div class="card">
-                    <div class="card-header">
-                        Proteger un enlace
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="protect" role="tabpanel" aria-labelledby="protect-tab">
+                <div class="card">
+                    <div class="card-header">
+                        Proteger un enlace
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="urlInput" class="form-label">URL a proteger</label>
+                            <input type="url" class="form-control" id="urlInput" placeholder="https://ejemplo.com" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Método de protección</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="protectionMethod" id="keyMethod" value="key" checked>
+                                <label class="form-check-label" for="keyMethod">
+                                    Generar archivo .key (recomendado)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="protectionMethod" id="passwordMethod" value="password">
+                                <label class="form-check-label" for="passwordMethod">
+                                    Usar contraseña
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 key-method-section">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle-fill me-2" aria-hidden="true"></i>Al proteger el enlace, RAKURL Security generará automáticamente un archivo .key con una combinación de números aleatorios que servirá como clave para descifrar el enlace.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 password-section">
+                            <label for="passwordInput" class="form-label">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="passwordInput" placeholder="Ingresa una contraseña segura" aria-describedby="passwordHelp">
+                                <span class="input-group-text toggle-password" data-target="passwordInput" role="button" tabindex="0" aria-label="Mostrar contraseña">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </span>
+                            </div>
+                            <div id="passwordStrength" class="progress mt-2" style="height: 5px; display: none;" aria-hidden="true">
+                                <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div id="passwordHelp" class="form-text">Usa una contraseña fuerte que puedas recordar. Esta será necesaria para acceder al enlace.</div>
+                        </div>
+                        
+                        <button class="btn btn-primary" id="protectBtn" aria-describedby="protectBtnHelp">
+                            <span id="protectBtnText">Proteger Enlace</span>
+                            <span id="protectBtnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                        <div id="protectBtnHelp" class="visually-hidden">Protege el enlace ingresado con el método seleccionado</div>
+                        
+                        <div class="error-message error-url" id="protectErrorUrl" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.
+                        </div>
+                        
+                        <div class="error-message error-key" id="protectErrorKey" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Error al generar la clave. Por favor, intenta nuevamente.
+                        </div>
+                        
+                        <div class="success-message" id="protectSuccess" role="alert">
+                            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>¡Enlace protegido exitosamente con RAKURL Security! Copia el código generado y guarda tu método de acceso.
+                        </div>
+                        
+                        <div class="key-info" id="keyInfo">
+                            <h5><i class="bi bi-key-fill me-2" aria-hidden="true"></i>Archivo de Clave Generado</h5>
+                            <p>Se ha generado una clave de seguridad única. Descárgala y guárdala en un lugar seguro. La necesitarás para acceder al enlace.</p>
+                            <button class="btn download-btn" id="downloadKeyBtn" aria-describedby="downloadKeyBtnHelp">
+                                <i class="bi bi-download me-2" aria-hidden="true"></i>Descargar Archivo .key
+                            </button>
+                            <div id="downloadKeyBtnHelp" class="visually-hidden">Descarga el archivo de clave generado</div>
+                        </div>
+                        
+                        <div class="result-container" id="protectResult">
+                            <hr>
+                            <h5>Código de Acceso Protegido <span class="privacy-badge">PRIVADO</span></h5>
+                            
+                            <div class="url-display-container">
+                                <textarea class="url-display" id="protectedUrlDisplay" readonly rows="3" aria-label="Código de acceso protegido"></textarea>
+                            </div>
+                            
+                                                        <input type="text" class="form-control" id="protectedUrl" readonly aria-label="URL protegida real">
+                            
+                            <div class="d-grid mb-3">
+                                <button class="btn btn-outline-primary" type="button" id="copyDisplayUrl" aria-describedby="copyDisplayUrlHelp">Copiar Código</button>
+                            </div>
+                            <div id="copyDisplayUrlHelp" class="visually-hidden">Copia el código de acceso protegido al portapapeles</div>
+                                
+                            <div id="qrcode" aria-label="Código QR del enlace protegido"></div>
+                            
+                            <div class="qr-actions">
+                                <button class="btn share-qr-btn" id="shareQrBtn" data-bs-toggle="modal" data-bs-target="#shareModal" aria-describedby="shareQrBtnHelp">
+                                    <i class="bi bi-share me-2" aria-hidden="true"></i>Compartir QR
+                                </button>
+                                <div id="shareQrBtnHelp" class="visually-hidden">Compartir o descargar la imagen del código QR</div>
+                            </div>
+                            
+                            <div class="alert alert-warning mt-3" role="alert">
+                                <strong>Importante:</strong> 
+                                <ul class="mb-0">
+                                    <li>Guarda este código y tu método de acceso (archivo .key o contraseña).</li>
+                                    <li>El código QR contiene una URL que lleva directamente a esta página con el código pre-cargado.</li>
+                                    <li>Para acceder al enlace original, solo necesitarás escanear el código QR y proporcionar tu método de acceso.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade" id="access" role="tabpanel" aria-labelledby="access-tab">
+                <div class="welcome-message" id="welcomeMessage">
+                    <h5><i class="bi bi-qr-code-scan me-2" aria-hidden="true"></i>¡Bienvenido desde un código QR!</h5>
+                    <p>El código de acceso ha sido cargado automáticamente. Solo necesitas proporcionar tu método de acceso (archivo .key o contraseña) para desbloquear el enlace.</p>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        Acceder a un enlace protegido
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="protectedUrlInput" class="form-label">Código de acceso</label>
+                            <input type="text" class="form-control" id="protectedUrlInput" placeholder="Pega aquí el código de acceso protegido" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Método de acceso</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="accessMethod" id="keyAccessMethod" value="key" checked>
+                                <label class="form-check-label" for="keyAccessMethod">
+                                    Usar archivo .key
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="accessMethod" id="passwordAccessMethod" value="password">
+                                <label class="form-check-label" for="passwordAccessMethod">
+                                    Usar contraseña
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 key-access-section">
+                            <label class="form-label">Cargar archivo clave (.key)</label>
+                            <div class="file-drop-area" id="fileDropAreaAccess" role="region" aria-label="Área para arrastrar archivo clave">
+                                <span class="file-msg">Arrastra el archivo .key aquí o haz clic para seleccionarlo</span>
+                                <input class="file-input" type="file" id="keyFileInputAccess" accept=".key" aria-label="Seleccionar archivo clave">
+                            </div>
+                            <div class="form-text">Usa el archivo .key que generó RAKURL Security al proteger el enlace.</div>
+                        </div>
+                        
+                        <div class="mb-3 password-access-section" style="display: none;">
+                            <label for="accessPasswordInput" class="form-label">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="accessPasswordInput" placeholder="Ingresa la contraseña" aria-describedby="accessPasswordHelp">
+                                <span class="input-group-text toggle-password" data-target="accessPasswordInput" role="button" tabindex="0" aria-label="Mostrar contraseña">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </span>
+                            </div>
+                            <div id="accessPasswordHelp" class="form-text">Ingresa la misma contraseña que usaste para proteger el enlace.</div>
+                        </div>
+                        
+                        <button class="btn btn-primary" id="accessBtn" aria-describedby="accessBtnHelp">
+                            <span id="accessBtnText">Acceder</span>
+                            <span id="accessBtnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                        <div id="accessBtnHelp" class="visually-hidden">Acceder al enlace protegido usando el método seleccionado</div>
+                        
+                        <div class="error-message error-url" id="accessErrorUrl" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>El código proporcionado no coincide con ningún enlace protegido por RAKURL Security. Verifica el código e intenta nuevamente.
+                        </div>
+                        
+                        <div class="error-message error-key" id="accessErrorKey" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>La llave ingresada es incorrecta o el archivo no es un .key válido. Asegúrate de usar el método de acceso correcto generado por RAKURL Security.
+                        </div>
+                        
+                        <div class="error-message error-key" id="accessErrorMethodKey" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Este enlace fue protegido con una contraseña. Por favor, cambia el método de acceso.
+                        </div>
+                        
+                        <div class="error-message error-key" id="accessErrorMethodFile" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Este enlace fue protegido con un archivo .key. Por favor, cambia el método de acceso.
+                        </div>
+                        
+                        <div class="success-message" id="accessSuccess" role="alert">
+                            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>¡Acceso concedido por RAKURL Security! El enlace original ha sido descifrado correctamente.
+                        </div>
+                        
+                        <div class="result-container" id="accessResult">
+                            <hr>
+                            <h5>Enlace Original</h5>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" id="originalUrl" readonly aria-label="URL original">
+                                <button class="btn btn-outline-secondary" type="button" id="copyOriginalUrl" aria-describedby="copyOriginalUrlHelp">Copiar</button>
+                                <button class="btn btn-outline-primary" type="button" id="visitOriginalUrl" aria-describedby="visitOriginalUrlHelp">Visitar</button>
+                            </div>
+                            <div id="copyOriginalUrlHelp" class="visually-hidden">Copiar la URL original al portapapeles</div>
+                            <div id="visitOriginalUrlHelp" class="visually-hidden">Visitar la URL original en una nueva pestaña</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                ¿Cómo funciona RAKURL Security?
+            </div>
+            <div class="card-body">
+                <p>RAKURL Security (RANDOM ACCESS KEY URL SECURITY) es una aplicación que te permite proteger y cifrar enlaces.</p>
+                <ol>
+                    <li><strong>Proteger un enlace:</strong> Ingresa la URL que deseas proteger. RAKURL Security generará automáticamente un archivo .key con números aleatorios o podrás usar una contraseña.</li>
+                    <li><strong>Generar código de acceso:</strong> RAKURL Security creará un código único que contiene la URL original cifrada con el método seleccionado.</li>
+                    <li><strong>Compartir mediante código QR:</strong> El código QR generado contiene una URL que lleva directamente a esta página con el código pre-cargado, facilitando el acceso.</li>
+                    <li><strong>Acceder al enlace:</strong> Para acceder al enlace original, necesitarás el código generado y el método de acceso que generaste al protegerlo.</li>
+                </ol>
+                <p class="mb-0"><strong>Nota:</strong> Toda la encriptación y desencriptación se realiza localmente en tu dispositivo. No se envía ninguna información a servidores externos, esto es completamente anónimo.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="shareModal" tabindex="-1" aria-labelledby="shareModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="shareModalLabel">Compartir Código de Acceso</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Comparte la URL o el código QR para que otros puedan acceder al enlace protegido.</p>
+                    <div id="modalQrContainer">
+                        <img id="modalQrImage" src="" alt="Código QR del enlace protegido" class="img-fluid" style="max-width: 200px; border-radius: 8px;">
                     </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="urlInput" class="form-label">URL a proteger</label>
-                            <input type="url" class="form-control" id="urlInput" placeholder="https://ejemplo.com" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Método de protección</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="protectionMethod" id="keyMethod" value="key" checked>
-                                <label class="form-check-label" for="keyMethod">
-                                    Generar archivo .key (recomendado)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="protectionMethod" id="passwordMethod" value="password">
-                                <label class="form-check-label" for="passwordMethod">
-                                    Usar contraseña
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3 key-method-section">
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle-fill me-2" aria-hidden="true"></i>Al proteger el enlace, RAKURL Security generará automáticamente un archivo .key con una combinación de números aleatorios que servirá como clave para descifrar el enlace.
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3 password-section">
-                            <label for="passwordInput" class="form-label">Contraseña</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="passwordInput" placeholder="Ingresa una contraseña segura" aria-describedby="passwordHelp">
-                                <span class="input-group-text toggle-password" data-target="passwordInput" role="button" tabindex="0" aria-label="Mostrar contraseña">
-                                    <i class="bi bi-eye" aria-hidden="true"></i>
-                                </span>
-                            </div>
-                            <div id="passwordStrength" class="progress mt-2" style="height: 5px; display: none;" aria-hidden="true">
-                                <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                            </div>
-                            <div id="passwordHelp" class="form-text">Usa una contraseña fuerte que puedas recordar. Esta será necesaria para acceder al enlace.</div>
-                        </div>
-                        
-                        <button class="btn btn-primary" id="protectBtn" aria-describedby="protectBtnHelp">
-                            <span id="protectBtnText">Proteger Enlace</span>
-                            <span id="protectBtnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
-                        </button>
-                        <div id="protectBtnHelp" class="visually-hidden">Protege el enlace ingresado con el método seleccionado</div>
-                        
-                        <div class="error-message error-url" id="protectErrorUrl" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.
-                        </div>
-                        
-                        <div class="error-message error-key" id="protectErrorKey" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Error al generar la clave. Por favor, intenta nuevamente.
-                        </div>
-                        
-                        <div class="success-message" id="protectSuccess" role="alert">
-                            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>¡Enlace protegido exitosamente con RAKURL Security! Copia el código generado y guarda tu método de acceso.
-                        </div>
-                        
-                        <div class="key-info" id="keyInfo">
-                            <h5><i class="bi bi-key-fill me-2" aria-hidden="true"></i>Archivo de Clave Generado</h5>
-                            <p>Se ha generado una clave de seguridad única. Descárgala y guárdala en un lugar seguro. La necesitarás para acceder al enlace.</p>
-                            <button class="btn download-btn" id="downloadKeyBtn" aria-describedby="downloadKeyBtnHelp">
-                                <i class="bi bi-download me-2" aria-hidden="true"></i>Descargar Archivo .key
-                            </button>
-                            <div id="downloadKeyBtnHelp" class="visually-hidden">Descarga el archivo de clave generado</div>
-                        </div>
-                        
-                        <div class="result-container" id="protectResult">
-                            <hr>
-                            <h5>Código de Acceso Protegido <span class="privacy-badge">PRIVADO</span></h5>
-                            
-                            <div class="url-display-container">
-                                <textarea class="url-display" id="protectedUrlDisplay" readonly rows="3" aria-label="Código de acceso protegido"></textarea>
-                            </div>
-                            
-                            <!-- Input oculto para la URL real -->
-                            <input type="text" class="form-control" id="protectedUrl" readonly aria-label="URL protegida real">
-                            
-                            <div class="d-grid mb-3">
-                                <button class="btn btn-outline-primary" type="button" id="copyDisplayUrl" aria-describedby="copyDisplayUrlHelp">Copiar Código</button>
-                            </div>
-                            <div id="copyDisplayUrlHelp" class="visually-hidden">Copia el código de acceso protegido al portapapeles</div>
-                                
-                            <div id="qrcode" aria-label="Código QR del enlace protegido"></div>
-                            
-                            <div class="qr-actions">
-                                <button class="btn share-qr-btn" id="shareQrBtn" aria-describedby="shareQrBtnHelp">
-                                    <i class="bi bi-share me-2" aria-hidden="true"></i>Compartir QR
-                                </button>
-                                <div id="shareQrBtnHelp" class="visually-hidden">Compartir o descargar la imagen del código QR</div>
-                            </div>
-                            
-                            <div class="alert alert-warning mt-3" role="alert">
-                                <strong>Importante:</strong> 
-                                <ul class="mb-0">
-                                    <li>Guarda este código y tu método de acceso (archivo .key o contraseña).</li>
-                                    <li>El código QR contiene una URL que lleva directamente a esta página con el código pre-cargado.</li>
-                                    <li>Para acceder al enlace original, solo necesitarás escanear el código QR y proporcionar tu método de acceso.</li>
-                                </ul>
-                            </div>
-                        </div>
+                    <div class="share-buttons">
+                        <a href="#" id="shareWhatsapp" class="share-btn whatsapp" target="_blank" rel="noopener noreferrer">
+                            <div class="icon-wrapper"><i class="bi bi-whatsapp"></i></div>
+                            <span>WhatsApp</span>
+                        </a>
+                        <a href="#" id="shareTelegram" class="share-btn telegram" target="_blank" rel="noopener noreferrer">
+                            <div class="icon-wrapper"><i class="bi bi-telegram"></i></div>
+                            <span>Telegram</span>
+                        </a>
+                        <a href="#" id="shareMessenger" class="share-btn messenger" target="_blank" rel="noopener noreferrer">
+                            <div class="icon-wrapper"><i class="bi bi-messenger"></i></div>
+                            <span>Messenger</span>
+                        </a>
+                        <a href="#" id="shareX" class="share-btn x" target="_blank" rel="noopener noreferrer">
+                            <div class="icon-wrapper"><i class="bi bi-twitter-x"></i></div>
+                            <span>X</span>
+                        </a>
+                        <a href="#" id="downloadQr" class="share-btn download" download="rakurl_qr.png">
+                            <div class="icon-wrapper"><i class="bi bi-download"></i></div>
+                            <span>Descargar</span>
+                        </a>
+                        <a href="#" id="nativeShare" class="share-btn native-share">
+                            <div class="icon-wrapper"><i class="bi bi-share-fill"></i></div>
+                            <span>Más...</span>
+                        </a>
                     </div>
                 </div>
-            </div>
-            
-            <div class="tab-pane fade" id="access" role="tabpanel" aria-labelledby="access-tab">
-                <div class="welcome-message" id="welcomeMessage">
-                    <h5><i class="bi bi-qr-code-scan me-2" aria-hidden="true"></i>¡Bienvenido desde un código QR!</h5>
-                    <p>El código de acceso ha sido cargado automáticamente. Solo necesitas proporcionar tu método de acceso (archivo .key o contraseña) para desbloquear el enlace.</p>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        Acceder a un enlace protegido
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="protectedUrlInput" class="form-label">Código de acceso</label>
-                            <input type="text" class="form-control" id="protectedUrlInput" placeholder="Pega aquí el código de acceso protegido" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Método de acceso</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="accessMethod" id="keyAccessMethod" value="key" checked>
-                                <label class="form-check-label" for="keyAccessMethod">
-                                    Usar archivo .key
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="accessMethod" id="passwordAccessMethod" value="password">
-                                <label class="form-check-label" for="passwordAccessMethod">
-                                    Usar contraseña
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3 key-access-section">
-                            <label class="form-label">Cargar archivo clave (.key)</label>
-                            <div class="file-drop-area" id="fileDropAreaAccess" role="region" aria-label="Área para arrastrar archivo clave">
-                                <span class="file-msg">Arrastra el archivo .key aquí o haz clic para seleccionarlo</span>
-                                <input class="file-input" type="file" id="keyFileInputAccess" accept=".key" aria-label="Seleccionar archivo clave">
-                            </div>
-                            <div class="form-text">Usa el archivo .key que generó RAKURL Security al proteger el enlace.</div>
-                        </div>
-                        
-                        <div class="mb-3 password-access-section" style="display: none;">
-                            <label for="accessPasswordInput" class="form-label">Contraseña</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="accessPasswordInput" placeholder="Ingresa la contraseña" aria-describedby="accessPasswordHelp">
-                                <span class="input-group-text toggle-password" data-target="accessPasswordInput" role="button" tabindex="0" aria-label="Mostrar contraseña">
-                                    <i class="bi bi-eye" aria-hidden="true"></i>
-                                </span>
-                            </div>
-                            <div id="accessPasswordHelp" class="form-text">Ingresa la misma contraseña que usaste para proteger el enlace.</div>
-                        </div>
-                        
-                        <button class="btn btn-primary" id="accessBtn" aria-describedby="accessBtnHelp">
-                            <span id="accessBtnText">Acceder</span>
-                            <span id="accessBtnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
-                        </button>
-                        <div id="accessBtnHelp" class="visually-hidden">Acceder al enlace protegido usando el método seleccionado</div>
-                        
-                        <div class="error-message error-url" id="accessErrorUrl" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>El código proporcionado no coincide con ningún enlace protegido por RAKURL Security. Verifica el código e intenta nuevamente.
-                        </div>
-                        
-                        <div class="error-message error-key" id="accessErrorKey" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>La llave ingresada es incorrecta o el archivo no es un .key válido. Asegúrate de usar el método de acceso correcto generado por RAKURL Security.
-                        </div>
-                        
-                        <div class="error-message error-key" id="accessErrorMethodKey" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Este enlace fue protegido con una contraseña. Por favor, cambia el método de acceso.
-                        </div>
-                        
-                        <div class="error-message error-key" id="accessErrorMethodFile" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Este enlace fue protegido con un archivo .key. Por favor, cambia el método de acceso.
-                        </div>
-                        
-                        <div class="success-message" id="accessSuccess" role="alert">
-                            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>¡Acceso concedido por RAKURL Security! El enlace original ha sido descifrado correctamente.
-                        </div>
-                        
-                        <div class="result-container" id="accessResult">
-                            <hr>
-                            <h5>Enlace Original</h5>
-                            <div class="input-group mb-3">
-                                <input type="text" class="form-control" id="originalUrl" readonly aria-label="URL original">
-                                <button class="btn btn-outline-secondary" type="button" id="copyOriginalUrl" aria-describedby="copyOriginalUrlHelp">Copiar</button>
-                                <button class="btn btn-outline-primary" type="button" id="visitOriginalUrl" aria-describedby="visitOriginalUrlHelp">Visitar</button>
-                            </div>
-                            <div id="copyOriginalUrlHelp" class="visually-hidden">Copiar la URL original al portapapeles</div>
-                            <div id="visitOriginalUrlHelp" class="visually-hidden">Visitar la URL original en una nueva pestaña</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mt-4">
-            <div class="card-header">
-                ¿Cómo funciona RAKURL Security?
-            </div>
-            <div class="card-body">
-                <p>RAKURL Security (RANDOM ACCESS KEY URL SECURITY) es una aplicación que te permite proteger y cifrar enlaces.</p>
-                <ol>
-                    <li><strong>Proteger un enlace:</strong> Ingresa la URL que deseas proteger. RAKURL Security generará automáticamente un archivo .key con números aleatorios o podrás usar una contraseña.</li>
-                    <li><strong>Generar código de acceso:</strong> RAKURL Security creará un código único que contiene la URL original cifrada con el método seleccionado.</li>
-                    <li><strong>Compartir mediante código QR:</strong> El código QR generado contiene una URL que lleva directamente a esta página con el código pre-cargado, facilitando el acceso.</li>
-                    <li><strong>Acceder al enlace:</strong> Para acceder al enlace original, necesitarás el código generado y el método de acceso que generaste al protegerlo.</li>
-                </ol>
-                <p class="mb-0"><strong>Nota:</strong> Toda la encriptación y desencriptación se realiza localmente en tu dispositivo. No se envía ninguna información a servidores externos, esto es completamente anónimo.</p>
             </div>
         </div>
     </div>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
         // Constantes para números mágicos
         const KEY_FILE_SIZE_BYTES = 12000;
         const PBKDF2_ITERATIONS = 10000;
