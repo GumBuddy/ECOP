@@ -1,202 +1,288 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAKURL Security - Protección de Enlaces</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        .container {
-            max-width: 800px;
-            margin-top: 50px;
-        }
-        .card {
-            border-radius: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        .card-header {
-            background-color: #6c5ce7;
-            color: white;
-            border-radius: 15px 15px 0 0 !important;
-            font-weight: 600;
-        }
-        .btn-primary {
-            background-color: #6c5ce7;
-            border-color: #6c5ce7;
-        }
-        .btn-primary:hover {
-            background-color: #5a4fcf;
-            border-color: #5a4fcf;
-        }
-        .btn-primary:disabled {
-            background-color: #9d8fd3;
-            border-color: #9d8fd3;
-        }
-        .result-container {
-            display: none;
-            margin-top: 20px;
-        }
-        .tab-content {
-            padding: 20px;
-        }
-        .file-drop-area {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            padding: 30px;
-            border: 2px dashed #6c5ce7;
-            border-radius: 10px;
-            transition: 0.2s;
-            background-color: #f8f7ff;
-            margin-bottom: 20px;
-        }
-        .file-drop-area:hover {
-            background-color: #f0efff;
-        }
-        .file-drop-area.is-active {
-            background-color: #e8e7ff;
-        }
-        .file-msg {
-            font-size: 16px;
-            font-weight: 500;
-            color: #6c5ce7;
-            margin-bottom: 10px;
-        }
-        .file-input {
-            position: absolute;
-            left: 0;
-            top: 0;
-            height: 100%;
-            width: 100%;
-            cursor: pointer;
-            opacity: 0;
-        }
-        .error-message {
-            display: none;
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 8px;
-            font-weight: 500;
-        }
-        .error-key {
-            background-color: #ffebee;
-            color: #c62828;
-            border-left: 4px solid #c62828;
-        }
-        .error-url {
-            background-color: #fff8e1;
-            color: #ff8f00;
-            border-left: 4px solid #ff8f00;
-        }
-        .success-message {
-            display: none;
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 8px;
-            background-color: #e8f5e9;
-            color: #2e7d32;
-            border-left: 4px solid #2e7d32;
-            font-weight: 500;
-        }
-        .key-info {
-            display: none;
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 8px;
-            background-color: #e3f2fd;
-            border-left: 4px solid #1976d2;
-        }
-        .key-info h5 {
-            color: #1976d2;
-            margin-bottom: 10px;
-        }
-        .download-btn {
-            background-color: #1976d2;
-            border-color: #1976d2;
-            margin-top: 10px;
-        }
-        .download-btn:hover {
-            background-color: #1565c0;
-            border-color: #1565c0;
-        }
-        .logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-        .logo-icon {
-            width: 60px;
-            height: 60px;
-            background-color: #6c5ce7;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-right: 15px;
-            color: white;
-            font-size: 24px;
-            font-weight: bold;
-        }
-        .password-section {
-            display: none;
-            margin-top: 15px;
-        }
-        .nav-tabs .nav-link {
-            color: #6c5ce7;
-        }
-        .nav-tabs .nav-link.active {
-            color: white;
-            background-color: #6c5ce7;
-        }
-        .url-display-container {
-            background-color: #f5f5f5;
-            border-radius: 8px;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #dee2e6;
-        }
-        .url-display {
-            font-family: monospace;
-            font-size: 14px;
-            word-break: break-all;
-            background-color: transparent;
-            border: none;
-            width: 100%;
-            resize: none;
-            outline: none;
-            color: #495057;
-        }
-        .privacy-badge {
-            display: inline-block;
-            background-color: #4caf50;
-            color: white;
-            font-size: 12px;
-            padding: 3px 8px;
-            border-radius: 12px;
-            margin-left: 10px;
-            font-weight: 500;
-        }
-        .input-group-text {
-            cursor: pointer;
-        }
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
-            border-width: 0.15em;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAKURL Security - Protección de Enlaces</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #6c5ce7;
+            --primary-hover: #5a4fcf;
+            --primary-disabled: #9d8fd3;
+            --secondary-color: #1976d2;
+            --secondary-hover: #1565c0;
+            --success-color: #2e7d32;
+            --warning-color: #ff8f00;
+            --danger-color: #c62828;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin-top: 50px;
+        }
+        
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            border: none;
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            font-weight: 600;
+            border: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+            border-color: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary:disabled {
+            background-color: var(--primary-disabled);
+            border-color: var(--primary-disabled);
+        }
+        
+        .result-container {
+            display: none;
+            margin-top: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .tab-content {
+            padding: 20px;
+        }
+        
+        .file-drop-area {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            padding: 30px;
+            border: 2px dashed var(--primary-color);
+            border-radius: 10px;
+            transition: 0.2s;
+            background-color: #f8f7ff;
+            margin-bottom: 20px;
+        }
+        
+        .file-drop-area:hover {
+            background-color: #f0efff;
+        }
+        
+        .file-drop-area.is-active {
+            background-color: #e8e7ff;
+        }
+        
+        .file-msg {
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .file-input {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            width: 100%;
+            cursor: pointer;
+            opacity: 0;
+        }
+        
+        .error-message {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: 500;
+            animation: shake 0.5s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+        
+        .error-key {
+            background-color: #ffebee;
+            color: var(--danger-color);
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .error-url {
+            background-color: #fff8e1;
+            color: var(--warning-color);
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .success-message {
+            display: none;
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            background-color: #e8f5e9;
+            color: var(--success-color);
+            border-left: 4px solid var(--success-color);
+            font-weight: 500;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .key-info {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background-color: #e3f2fd;
+            border-left: 4px solid var(--secondary-color);
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .key-info h5 {
+            color: var(--secondary-color);
+            margin-bottom: 10px;
+        }
+        
+        .download-btn {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            margin-top: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .download-btn:hover {
+            background-color: var(--secondary-hover);
+            border-color: var(--secondary-hover);
+            transform: translateY(-2px);
+        }
+        
+        .logo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .logo-icon {
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-color);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            transition: transform 0.3s ease;
+        }
+        
+        .logo-container:hover .logo-icon {
+            transform: rotate(10deg) scale(1.05);
+        }
+        
+        .password-section {
+            display: none;
+            margin-top: 15px;
+        }
+        
+        .nav-tabs .nav-link {
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            background-color: rgba(108, 92, 231, 0.1);
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: white;
+            background-color: var(--primary-color);
+        }
+        
+        .url-display-container {
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .url-display {
+            font-family: monospace;
+            font-size: 14px;
+            word-break: break-all;
+            background-color: transparent;
+            border: none;
+            width: 100%;
+            resize: none;
+            outline: none;
+            color: #495057;
+        }
+        
+        .privacy-badge {
+            display: inline-block;
+            background-color: #4caf50;
+            color: white;
+            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 10px;
+            font-weight: 500;
+        }
+        
+        .input-group-text {
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        
+        .input-group-text:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        .spinner-border-sm {
+            width: 1rem;
+            height: 1rem;
+            border-width: 0.15em;
+        }
+        
         .progress-bar {
             transition: width .6s ease;
         }
+        
         #qrcode {
-            display: none; /* Oculto por defecto */
+            display: none;
             margin-top: 20px;
             padding: 15px;
             border-radius: 8px;
@@ -205,369 +291,428 @@
             width: fit-content;
             margin-left: auto;
             margin-right: auto;
+            text-align: center;
         }
-    </style>
+        
+        .form-check-input:checked {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .form-check-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+        }
+        
+        /* Mejoras de accesibilidad */
+        .btn:focus, .form-control:focus, .form-check-input:focus {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+        
+        /* Mejoras de responsividad */
+        @media (max-width: 768px) {
+            .container {
+                margin-top: 20px;
+                padding: 0 15px;
+            }
+            
+            .card {
+                margin-bottom: 15px;
+            }
+            
+            h1.display-4 {
+                font-size: 2rem;
+            }
+        }
+        
+        /* Ocultar input de URL real */
+        #protectedUrl {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <div class="text-center mb-4">
-            <div class="logo-container">
-                <div class="logo-icon">RAK</div>
-            </div>
-            <h1 class="display-4 fw-bold" style="color: #6c5ce7;">RAKURL Security</h1>
-            <p class="lead">RANDOM ACCESS KEY URL SECURITY</p>
-        </div>
+    <div class="container">
+        <div class="text-center mb-4">
+            <div class="logo-container">
+                <div class="logo-icon" aria-hidden="true">RAK</div>
+            </div>
+            <h1 class="display-4 fw-bold" style="color: var(--primary-color);">RAKURL Security</h1>
+            <p class="lead">RANDOM ACCESS KEY URL SECURITY</p>
+        </div>
 
-        <ul class="nav nav-tabs" id="myTab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="protect-tab" data-bs-toggle="tab" data-bs-target="#protect" type="button" role="tab" aria-controls="protect" aria-selected="true">Proteger Enlace</button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link" id="access-tab" data-bs-toggle="tab" data-bs-target="#access" type="button" role="tab" aria-controls="access" aria-selected="false">Acceder a Enlace</button>
-            </li>
-        </ul>
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="protect-tab" data-bs-toggle="tab" data-bs-target="#protect" type="button" role="tab" aria-controls="protect" aria-selected="true">Proteger Enlace</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="access-tab" data-bs-toggle="tab" data-bs-target="#access" type="button" role="tab" aria-controls="access" aria-selected="false">Acceder a Enlace</button>
+            </li>
+        </ul>
 
-        <div class="tab-content" id="myTabContent">
-                        <div class="tab-pane fade show active" id="protect" role="tabpanel" aria-labelledby="protect-tab">
-                <div class="card">
-                    <div class="card-header">
-                        Proteger un enlace
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="urlInput" class="form-label">URL a proteger</label>
-                            <input type="url" class="form-control" id="urlInput" placeholder="https://ejemplo.com" required="">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Método de protección</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="protectionMethod" id="keyMethod" value="key" checked>
-                                <label class="form-check-label" for="keyMethod">
-                                    Generar archivo .key (recomendado)
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="protectionMethod" id="passwordMethod" value="password">
-                                <label class="form-check-label" for="passwordMethod">
-                                    Usar contraseña
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3 key-method-section">
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle-fill me-2"></i>Al proteger el enlace, RAKURL Security generará automáticamente un archivo .key con una combinación de números aleatorios que servirá como clave para descifrar el enlace.
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3 password-section">
-                            <label for="passwordInput" class="form-label">Contraseña</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="passwordInput" placeholder="Ingresa una contraseña segura">
-                                <span class="input-group-text toggle-password" data-target="passwordInput">
-                                    <i class="bi bi-eye"></i>
-                                </span>
-                            </div>
-                                <div id="passwordStrength" class="progress mt-2" style="height: 5px; display: none;">
-                                    <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            <div class="form-text">Usa una contraseña fuerte que puedas recordar. Esta será necesaria para acceder al enlace.</div>
-                        </div>
-                        
-                        <button class="btn btn-primary" id="protectBtn">
-                            <span id="protectBtnText">Proteger Enlace</span>
-                            <span id="protectBtnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
-                        </button>
-                        
-                        <div class="error-message error-url" id="protectErrorUrl">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.
-                        </div>
-                        
-                        <div class="error-message error-key" id="protectErrorKey">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Error al generar la clave. Por favor, intenta nuevamente.
-                        </div>
-                        
-                        <div class="success-message" id="protectSuccess">
-                            <i class="bi bi-check-circle-fill me-2"></i>¡Enlace protegido exitosamente con RAKURL Security! Copia el enlace generado y guarda tu método de acceso.
-                        </div>
-                        
-                        <div class="key-info" id="keyInfo">
-                            <h5><i class="bi bi-key-fill me-2"></i>Archivo de Clave Generado</h5>
-                            <p>Se ha generado una clave de seguridad única. Descárgala y guárdala en un lugar seguro. La necesitarás para acceder al enlace.</p>
-                            <button class="btn download-btn" id="downloadKeyBtn">
-                                <i class="bi bi-download me-2"></i>Descargar Archivo .key
-                            </button>
-                        </div>
-                        
-                        <div class="result-container" id="protectResult">
-                            <hr>
-                            <h5>Enlace Protegido por RAKURL Security <span class="privacy-badge">PRIVADO</span></h5>
-                            
-                            <div class="url-display-container">
-                                <textarea class="url-display" id="protectedUrlDisplay" readonly rows="3"></textarea>
-                            </div>
-                            
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="protectedUrl" readonly="">
-                                <button class="btn btn-outline-secondary" type="button" id="copyProtectedUrl">Copiar URL real</button>
-                                <button class="btn btn-outline-primary" type="button" id="copyDisplayUrl">Copiar URL visible</button>
-                            </div>
+        <div class="tab-content" id="myTabContent">
+            <div class="tab-pane fade show active" id="protect" role="tabpanel" aria-labelledby="protect-tab">
+                <div class="card">
+                    <div class="card-header">
+                        Proteger un enlace
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="urlInput" class="form-label">URL a proteger</label>
+                            <input type="url" class="form-control" id="urlInput" placeholder="https://ejemplo.com" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Método de protección</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="protectionMethod" id="keyMethod" value="key" checked>
+                                <label class="form-check-label" for="keyMethod">
+                                    Generar archivo .key (recomendado)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="protectionMethod" id="passwordMethod" value="password">
+                                <label class="form-check-label" for="passwordMethod">
+                                    Usar contraseña
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 key-method-section">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle-fill me-2" aria-hidden="true"></i>Al proteger el enlace, RAKURL Security generará automáticamente un archivo .key con una combinación de números aleatorios que servirá como clave para descifrar el enlace.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 password-section">
+                            <label for="passwordInput" class="form-label">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="passwordInput" placeholder="Ingresa una contraseña segura" aria-describedby="passwordHelp">
+                                <span class="input-group-text toggle-password" data-target="passwordInput" role="button" tabindex="0" aria-label="Mostrar contraseña">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </span>
+                            </div>
+                            <div id="passwordStrength" class="progress mt-2" style="height: 5px; display: none;" aria-hidden="true">
+                                <div id="passwordStrengthBar" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div id="passwordHelp" class="form-text">Usa una contraseña fuerte que puedas recordar. Esta será necesaria para acceder al enlace.</div>
+                        </div>
+                        
+                        <button class="btn btn-primary" id="protectBtn" aria-describedby="protectBtnHelp">
+                            <span id="protectBtnText">Proteger Enlace</span>
+                            <span id="protectBtnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                        <div id="protectBtnHelp" class="visually-hidden">Protege el enlace ingresado con el método seleccionado</div>
+                        
+                        <div class="error-message error-url" id="protectErrorUrl" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.
+                        </div>
+                        
+                        <div class="error-message error-key" id="protectErrorKey" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Error al generar la clave. Por favor, intenta nuevamente.
+                        </div>
+                        
+                        <div class="success-message" id="protectSuccess" role="alert">
+                            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>¡Enlace protegido exitosamente con RAKURL Security! Copia el enlace generado y guarda tu método de acceso.
+                        </div>
+                        
+                        <div class="key-info" id="keyInfo">
+                            <h5><i class="bi bi-key-fill me-2" aria-hidden="true"></i>Archivo de Clave Generado</h5>
+                            <p>Se ha generado una clave de seguridad única. Descárgala y guárdala en un lugar seguro. La necesitarás para acceder al enlace.</p>
+                            <button class="btn download-btn" id="downloadKeyBtn" aria-describedby="downloadKeyBtnHelp">
+                                <i class="bi bi-download me-2" aria-hidden="true"></i>Descargar Archivo .key
+                            </button>
+                            <div id="downloadKeyBtnHelp" class="visually-hidden">Descarga el archivo de clave generado</div>
+                        </div>
+                        
+                        <div class="result-container" id="protectResult">
+                            <hr>
+                            <h5>Enlace Protegido por RAKURL Security <span class="privacy-badge">PRIVADO</span></h5>
+                            
+                            <div class="url-display-container">
+                                <textarea class="url-display" id="protectedUrlDisplay" readonly rows="3" aria-label="URL protegida visible"></textarea>
+                            </div>
+                            
+                            <!-- Input oculto para la URL real -->
+                            <input type="text" class="form-control" id="protectedUrl" readonly aria-label="URL protegida real">
+                            
+                            <div class="d-grid mb-3">
+                                <button class="btn btn-outline-primary" type="button" id="copyDisplayUrl" aria-describedby="copyDisplayUrlHelp">Copiar URL visible</button>
+                            </div>
+                            <div id="copyDisplayUrlHelp" class="visually-hidden">Copia la URL protegida visible al portapapeles</div>
                                 
-                                <div id="qrcode"></div>
-                            
-                            <div class="alert alert-warning mt-3">
-                                <strong>Importante:</strong> Guarda este enlace protegido y tu método de acceso (archivo .key o contraseña). Necesitarás ambos para acceder al enlace original.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-                        <div class="tab-pane fade" id="access" role="tabpanel" aria-labelledby="access-tab">
-                <div class="card">
-                    <div class="card-header">
-                        Acceder a un enlace protegido
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <label for="protectedUrlInput" class="form-label">Enlace protegido</label>
-                            <input type="text" class="form-control" id="protectedUrlInput" placeholder="Pega aquí el enlace protegido por RAKURL Security" required="">
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Método de acceso</label>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="accessMethod" id="keyAccessMethod" value="key" checked>
-                                <label class="form-check-label" for="keyAccessMethod">
-                                    Usar archivo .key
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="accessMethod" id="passwordAccessMethod" value="password">
-                                <label class="form-check-label" for="passwordAccessMethod">
-                                    Usar contraseña
-                                </label>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3 key-access-section">
-                            <label class="form-label">Cargar archivo clave (.key)</label>
-                            <div class="file-drop-area" id="fileDropAreaAccess">
-                                <span class="file-msg">Arrastra el archivo .key aquí o haz clic para seleccionarlo</span>
-                                <input class="file-input" type="file" id="keyFileInputAccess" accept=".key">
-                            </div>
-                            <div class="form-text">Usa el archivo .key que generó RAKURL Security al proteger el enlace.</div>
-                        </div>
-                        
-                        <div class="mb-3 password-access-section" style="display: none;">
-                            <label for="accessPasswordInput" class="form-label">Contraseña</label>
-                            <div class="input-group">
-                                <input type="password" class="form-control" id="accessPasswordInput" placeholder="Ingresa la contraseña">
-                                <span class="input-group-text toggle-password" data-target="accessPasswordInput">
-                                    <i class="bi bi-eye"></i>
-                                </span>
-                            </div>
-                            <div class="form-text">Ingresa la misma contraseña que usaste para proteger el enlace.</div>
-                        </div>
-                        
-                        <button class="btn btn-primary" id="accessBtn">
-                            <span id="accessBtnText">Acceder</span>
-                            <span id="accessBtnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
-                        </button>
-                        
-                        <div class="error-message error-url" id="accessErrorUrl">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>La URL proporcionada no coincide con ningún enlace protegido por RAKURL Security. Verifica la URL e intenta nuevamente.
-                        </div>
-                        
-                        <div class="error-message error-key" id="accessErrorKey">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>La llave ingresada es incorrecta o el archivo no es un .key válido. Asegúrate de usar el método de acceso correcto generado por RAKURL Security.
-                        </div>
-                        
-                        <div class="error-message error-key" id="accessErrorMethodKey">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Este enlace fue protegido con una contraseña. Por favor, cambia el método de acceso.
-                        </div>
-                        
-                        <div class="error-message error-key" id="accessErrorMethodFile">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i>Este enlace fue protegido con un archivo .key. Por favor, cambia el método de acceso.
-                        </div>
-                        
-                        <div class="success-message" id="accessSuccess">
-                            <i class="bi bi-check-circle-fill me-2"></i>¡Acceso concedido por RAKURL Security! El enlace original ha sido descifrado correctamente.
-                        </div>
-                        
-                        <div class="result-container" id="accessResult">
-                            <hr>
-                            <h5>Enlace Original</h5>
-                            <div class="input-group mb-3">
-                                <input type="text" class="form-control" id="originalUrl" readonly="">
-                                <button class="btn btn-outline-secondary" type="button" id="copyOriginalUrl">Copiar</button>
-                                <button class="btn btn-outline-primary" type="button" id="visitOriginalUrl">Visitar</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card mt-4">
-            <div class="card-header">
-                ¿Cómo funciona RAKURL Security?
-            </div>
-            <div class="card-body">
-                <p>RAKURL Security (RANDOM ACCESS KEY URL SECURITY) es una aplicación que te permite proteger y cifrar enlaces.</p>
-                <ol>
-                    <li><strong>Proteger un enlace:</strong> Ingresa la URL que deseas proteger. RAKURL Security generará automáticamente un archivo .key con números aleatorios o podrás usar una contraseña.</li>
-                    <li><strong>Generar enlace protegido:</strong> RAKURL Security creará un enlace protegido que contiene la URL original cifrada con el método seleccionado.</li>
-                    <li><strong>Acceder al enlace:</strong> Para acceder al enlace original, necesitarás el enlace protegido y el método de acceso que generó RAKURL Security al protegerlo.</li>
-                </ol>
-                <p class="mb-0"><strong>Nota:</strong> Toda la encriptación y desencriptación se realiza localmente en tu dispositivo. No se envía ninguna información a servidores externos, esto es completamente anónimo.</p>
-            </div>
-        </div>
-    </div>
+                            <div id="qrcode" aria-label="Código QR del enlace protegido"></div>
+                            
+                            <div class="alert alert-warning mt-3" role="alert">
+                                <strong>Importante:</strong> Guarda este enlace protegido y tu método de acceso (archivo .key o contraseña). Necesitarás ambos para acceder al enlace original.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="tab-pane fade" id="access" role="tabpanel" aria-labelledby="access-tab">
+                <div class="card">
+                    <div class="card-header">
+                        Acceder a un enlace protegido
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="protectedUrlInput" class="form-label">Enlace protegido</label>
+                            <input type="text" class="form-control" id="protectedUrlInput" placeholder="Pega aquí el enlace protegido por RAKURL Security" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Método de acceso</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="accessMethod" id="keyAccessMethod" value="key" checked>
+                                <label class="form-check-label" for="keyAccessMethod">
+                                    Usar archivo .key
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="accessMethod" id="passwordAccessMethod" value="password">
+                                <label class="form-check-label" for="passwordAccessMethod">
+                                    Usar contraseña
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 key-access-section">
+                            <label class="form-label">Cargar archivo clave (.key)</label>
+                            <div class="file-drop-area" id="fileDropAreaAccess" role="region" aria-label="Área para arrastrar archivo clave">
+                                <span class="file-msg">Arrastra el archivo .key aquí o haz clic para seleccionarlo</span>
+                                <input class="file-input" type="file" id="keyFileInputAccess" accept=".key" aria-label="Seleccionar archivo clave">
+                            </div>
+                            <div class="form-text">Usa el archivo .key que generó RAKURL Security al proteger el enlace.</div>
+                        </div>
+                        
+                        <div class="mb-3 password-access-section" style="display: none;">
+                            <label for="accessPasswordInput" class="form-label">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="accessPasswordInput" placeholder="Ingresa la contraseña" aria-describedby="accessPasswordHelp">
+                                <span class="input-group-text toggle-password" data-target="accessPasswordInput" role="button" tabindex="0" aria-label="Mostrar contraseña">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
+                                </span>
+                            </div>
+                            <div id="accessPasswordHelp" class="form-text">Ingresa la misma contraseña que usaste para proteger el enlace.</div>
+                        </div>
+                        
+                        <button class="btn btn-primary" id="accessBtn" aria-describedby="accessBtnHelp">
+                            <span id="accessBtnText">Acceder</span>
+                            <span id="accessBtnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                        </button>
+                        <div id="accessBtnHelp" class="visually-hidden">Acceder al enlace protegido usando el método seleccionado</div>
+                        
+                        <div class="error-message error-url" id="accessErrorUrl" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>La URL proporcionada no coincide con ningún enlace protegido por RAKURL Security. Verifica la URL e intenta nuevamente.
+                        </div>
+                        
+                        <div class="error-message error-key" id="accessErrorKey" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>La llave ingresada es incorrecta o el archivo no es un .key válido. Asegúrate de usar el método de acceso correcto generado por RAKURL Security.
+                        </div>
+                        
+                        <div class="error-message error-key" id="accessErrorMethodKey" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Este enlace fue protegido con una contraseña. Por favor, cambia el método de acceso.
+                        </div>
+                        
+                        <div class="error-message error-key" id="accessErrorMethodFile" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>Este enlace fue protegido con un archivo .key. Por favor, cambia el método de acceso.
+                        </div>
+                        
+                        <div class="success-message" id="accessSuccess" role="alert">
+                            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>¡Acceso concedido por RAKURL Security! El enlace original ha sido descifrado correctamente.
+                        </div>
+                        
+                        <div class="result-container" id="accessResult">
+                            <hr>
+                            <h5>Enlace Original</h5>
+                            <div class="input-group mb-3">
+                                <input type="text" class="form-control" id="originalUrl" readonly aria-label="URL original">
+                                <button class="btn btn-outline-secondary" type="button" id="copyOriginalUrl" aria-describedby="copyOriginalUrlHelp">Copiar</button>
+                                <button class="btn btn-outline-primary" type="button" id="visitOriginalUrl" aria-describedby="visitOriginalUrlHelp">Visitar</button>
+                            </div>
+                            <div id="copyOriginalUrlHelp" class="visually-hidden">Copiar la URL original al portapapeles</div>
+                            <div id="visitOriginalUrlHelp" class="visually-hidden">Visitar la URL original en una nueva pestaña</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                ¿Cómo funciona RAKURL Security?
+            </div>
+            <div class="card-body">
+                <p>RAKURL Security (RANDOM ACCESS KEY URL SECURITY) es una aplicación que te permite proteger y cifrar enlaces.</p>
+                <ol>
+                    <li><strong>Proteger un enlace:</strong> Ingresa la URL que deseas proteger. RAKURL Security generará automáticamente un archivo .key con números aleatorios o podrás usar una contraseña.</li>
+                    <li><strong>Generar enlace protegido:</strong> RAKURL Security creará un enlace protegido que contiene la URL original cifrada con el método seleccionado.</li>
+                    <li><strong>Acceder al enlace:</strong> Para acceder al enlace original, necesitarás el enlace protegido y el método de acceso que generó RAKURL Security al protegerlo.</li>
+                </ol>
+                <p class="mb-0"><strong>Nota:</strong> Toda la encriptación y desencriptación se realiza localmente en tu dispositivo. No se envía ninguna información a servidores externos, esto es completamente anónimo.</p>
+            </div>
+        </div>
+    </div>
 
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script>
-        // Constantes para números mágicos
-        const KEY_FILE_SIZE_BYTES = 12000;
-        const PBKDF2_ITERATIONS = 10000;
-        
-        // URL base personalizada para mostrar al usuario
-        const CUSTOM_BASE_URL = "https://secure.rakurl/access#";
-        
-        // Versión del formato de payload
-        const PAYLOAD_VERSION = 1;
-        
-        // Estado de la aplicación encapsulado
-        const appState = {
-            generatedKeyFile: null,
-            displayUrl: null
-        };
-        
-        document.addEventListener('DOMContentLoaded', function() {
-            // Configurar área de arrastrar y soltar para acceso
-            setupFileDropArea('fileDropAreaAccess', 'keyFileInputAccess');
-            
-            // Configurar eventos para cambiar entre métodos de protección
-            document.getElementById('keyMethod').addEventListener('change', function() {
-                document.querySelector('.key-method-section').style.display = 'block';
-                document.querySelector('.password-section').style.display = 'none';
-            });
-            
-            document.getElementById('passwordMethod').addEventListener('change', function() {
-                document.querySelector('.key-method-section').style.display = 'none';
-                document.querySelector('.password-section').style.display = 'block';
-            });
-            
-            // Configurar eventos para cambiar entre métodos de acceso
-            document.getElementById('keyAccessMethod').addEventListener('change', function() {
-                document.querySelector('.key-access-section').style.display = 'block';
-                document.querySelector('.password-access-section').style.display = 'none';
-            });
-            
-            document.getElementById('passwordAccessMethod').addEventListener('change', function() {
-                document.querySelector('.key-access-section').style.display = 'none';
-                document.querySelector('.password-access-section').style.display = 'block';
-            });
-            
-            // Botón para proteger enlace
-            document.getElementById('protectBtn').addEventListener('click', protectUrl);
-            
-            // Botón para acceder a enlace
-            document.getElementById('accessBtn').addEventListener('click', accessUrl);
-            
-            // Botones para copiar
-            document.getElementById('copyProtectedUrl').addEventListener('click', function() {
-                copyToClipboard('protectedUrl', this);
-            });
-            
-            document.getElementById('copyDisplayUrl').addEventListener('click', function() {
-                copyToClipboard('protectedUrlDisplay', this);
-            });
-  _**_**          
-            document.getElementById('copyOriginalUrl').addEventListener('click', function() {
-                copyToClipboard('originalUrl', this);
-            });
-            
-            // Botón para visitar enlace original
-            document.getElementById('visitOriginalUrl').addEventListener('click', function() {
-                const url = document.getElementById('originalUrl').value;
-                if (url) {
-                    window.open(url, '_blank');
-                }
-            });
-            
-            // Botón para descargar archivo .key
-            document.getElementById('downloadKeyBtn').addEventListener('click', downloadKeyFile);
-            
-            // Configurar botones para mostrar/ocultar contraseña
-            setupPasswordToggles();
+    <script>
+        // Constantes para números mágicos
+        const KEY_FILE_SIZE_BYTES = 12000;
+        const PBKDF2_ITERATIONS = 10000;
+        
+        // URL base personalizada para mostrar al usuario
+        const CUSTOM_BASE_URL = "https://secure.rakurl/access#";
+        
+        // Versión del formato de payload
+        const PAYLOAD_VERSION = 1;
+        
+        // Estado de la aplicación encapsulado
+        const appState = {
+            generatedKeyFile: null,
+            displayUrl: null
+        };
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar área de arrastrar y soltar para acceso
+            setupFileDropArea('fileDropAreaAccess', 'keyFileInputAccess');
+            
+            // Configurar eventos para cambiar entre métodos de protección
+            document.getElementById('keyMethod').addEventListener('change', function() {
+                document.querySelector('.key-method-section').style.display = 'block';
+                document.querySelector('.password-section').style.display = 'none';
+            });
+            
+            document.getElementById('passwordMethod').addEventListener('change', function() {
+                document.querySelector('.key-method-section').style.display = 'none';
+                document.querySelector('.password-section').style.display = 'block';
+            });
+            
+            // Configurar eventos para cambiar entre métodos de acceso
+            document.getElementById('keyAccessMethod').addEventListener('change', function() {
+                document.querySelector('.key-access-section').style.display = 'block';
+                document.querySelector('.password-access-section').style.display = 'none';
+            });
+            
+            document.getElementById('passwordAccessMethod').addEventListener('change', function() {
+                document.querySelector('.key-access-section').style.display = 'none';
+                document.querySelector('.password-access-section').style.display = 'block';
+            });
+            
+            // Botón para proteger enlace
+            document.getElementById('protectBtn').addEventListener('click', protectUrl);
+            
+            // Botón para acceder a enlace
+            document.getElementById('accessBtn').addEventListener('click', accessUrl);
+            
+            // Botón para copiar URL visible
+            document.getElementById('copyDisplayUrl').addEventListener('click', function() {
+                copyToClipboard('protectedUrlDisplay', this);
+            });
+            
+            // Botón para copiar URL original
+            document.getElementById('copyOriginalUrl').addEventListener('click', function() {
+                copyToClipboard('originalUrl', this);
+            });
+            
+            // Botón para visitar enlace original
+            document.getElementById('visitOriginalUrl').addEventListener('click', function() {
+                const url = document.getElementById('originalUrl').value;
+                if (url) {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                }
+            });
+            
+            // Botón para descargar archivo .key
+            document.getElementById('downloadKeyBtn').addEventListener('click', downloadKeyFile);
+            
+            // Configurar botones para mostrar/ocultar contraseña
+            setupPasswordToggles();
 
             // Configurar medidor de fortaleza de contraseña
             document.getElementById('passwordInput').addEventListener('input', function() {
                 checkPasswordStrength(this.value);
             });
-        });
-        
+        });
+        
         /**
          * Configura los botones para mostrar/ocultar la contraseña en los campos de tipo password.
          */
-        function setupPasswordToggles() {
-            const toggleButtons = document.querySelectorAll('.toggle-password');
-            
-            toggleButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    const targetId = this.getAttribute('data-target');
-                    const targetInput = document.getElementById(targetId);
-                    const icon = this.querySelector('i');
-                    
-                    if (targetInput.type === 'password') {
-                        targetInput.type = 'text';
-                        icon.classList.remove('bi-eye');
-                        icon.classList.add('bi-eye-slash');
-                    } else {
-                        targetInput.type = 'password';
-                        icon.classList.remove('bi-eye-slash');
-                        icon.classList.add('bi-eye');
-                    }
-                });
-            });
-        }
-        
+        function setupPasswordToggles() {
+            const toggleButtons = document.querySelectorAll('.toggle-password');
+            
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    togglePasswordVisibility(this);
+                });
+                
+                // Soporte para teclado
+                button.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        togglePasswordVisibility(this);
+                    }
+                });
+            });
+            
+            function togglePasswordVisibility(button) {
+                const targetId = button.getAttribute('data-target');
+                const targetInput = document.getElementById(targetId);
+                const icon = button.querySelector('i');
+                
+                if (targetInput.type === 'password') {
+                    targetInput.type = 'text';
+                    icon.classList.remove('bi-eye');
+                    icon.classList.add('bi-eye-slash');
+                    button.setAttribute('aria-label', 'Ocultar contraseña');
+                } else {
+                    targetInput.type = 'password';
+                    icon.classList.remove('bi-eye-slash');
+                    icon.classList.add('bi-eye');
+                    button.setAttribute('aria-label', 'Mostrar contraseña');
+                }
+            }
+        }
+        
         /**
          * Configura el área para arrastrar y soltar archivos.
          * @param {string} dropAreaId - El ID del elemento del área de soltar.
          * @param {string} fileInputId - El ID del elemento input de tipo file.
          */
-        function setupFileDropArea(dropAreaId, fileInputId) {
-            const dropArea = document.getElementById(dropAreaId);
-            const fileInput = document.getElementById(fileInputId);
-            
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, e => { e.preventDefault(); e.stopPropagation(); }, false);
-            });
-            
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => dropArea.classList.add('is-active'), false);
-            });
-            
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => dropArea.classList.remove('is-active'), false);
-            });
-            
-            dropArea.addEventListener('drop', e => {
-                const dt = e.dataTransfer;
-                const files = dt.files;
-                handleFiles(files, fileInput, dropArea);
-            }, false);
-            
-            fileInput.addEventListener('change', function() {
-                handleFiles(this.files, fileInput, dropArea);
-            });
-        }
+        function setupFileDropArea(dropAreaId, fileInputId) {
+            const dropArea = document.getElementById(dropAreaId);
+            const fileInput = document.getElementById(fileInputId);
+            
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, e => { 
+                    e.preventDefault(); 
+                    e.stopPropagation(); 
+                }, false);
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.add('is-active'), false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropArea.addEventListener(eventName, () => dropArea.classList.remove('is-active'), false);
+            });
+            
+            dropArea.addEventListener('drop', e => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFiles(files, fileInput, dropArea);
+            }, false);
+            
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files, fileInput, dropArea);
+            });
+        }
 
         function handleFiles(files, fileInput, dropArea) {
             if (files.length > 0) {
@@ -581,31 +726,35 @@
                 updateFileDisplay(dropArea, file.name);
             }
         }
-        
-        function updateFileDisplay(dropArea, fileName) {
-            const fileMsg = dropArea.querySelector('.file-msg');
-            fileMsg.textContent = `Archivo seleccionado: ${fileName}`;
-        }
-        
-        function showError(elementId, message) {
-            const errorElement = document.getElementById(elementId);
-            errorElement.style.display = 'block';
-            if (message) {
-                errorElement.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i>${message}`;
-            }
-        }
-        
-        function hideError(elementId) {
-            document.getElementById(elementId).style.display = 'none';
-        }
-        
-        function toggleLoading(buttonId, spinnerId, loading) {
-            const button = document.getElementById(buttonId);
-            const spinner = document.getElementById(spinnerId);
-            button.disabled = loading;
-            spinner.classList.toggle('d-none', !loading);
-        }
-        
+        
+        function updateFileDisplay(dropArea, fileName) {
+            const fileMsg = dropArea.querySelector('.file-msg');
+            fileMsg.textContent = `Archivo seleccionado: ${fileName}`;
+        }
+        
+        function showError(elementId, message) {
+            const errorElement = document.getElementById(elementId);
+            errorElement.style.display = 'block';
+            if (message) {
+                errorElement.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>${message}`;
+            }
+            
+            // Enfocar el elemento de error para accesibilidad
+            errorElement.focus();
+            errorElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function hideError(elementId) {
+            document.getElementById(elementId).style.display = 'none';
+        }
+        
+        function toggleLoading(buttonId, spinnerId, loading) {
+            const button = document.getElementById(buttonId);
+            const spinner = document.getElementById(spinnerId);
+            button.disabled = loading;
+            spinner.classList.toggle('d-none', !loading);
+        }
+        
         /**
          * Evalúa la fortaleza de una contraseña y actualiza la UI.
          * @param {string} password - La contraseña a evaluar.
@@ -628,175 +777,186 @@
 
             let width = (score / 5) * 100;
             let color = 'bg-danger'; // Débil
-            if (score >= 3) color = 'bg-warning'; // Media
-            if (score >= 4) color = 'bg-success'; // Fuerte
+            let label = 'Débil';
+            
+            if (score >= 3) {
+                color = 'bg-warning'; // Media
+                label = 'Media';
+            }
+            if (score >= 4) {
+                color = 'bg-success'; // Fuerte
+                label = 'Fuerte';
+            }
 
             strengthBar.style.width = `${width}%`;
             strengthBar.className = `progress-bar ${color}`;
+            strengthBar.setAttribute('aria-valuenow', width);
+            strengthBar.setAttribute('aria-label', `Fortaleza de contraseña: ${label}`);
         }
 
-        function generateKeyFile() {
-            const keyArray = new Uint8Array(KEY_FILE_SIZE_BYTES);
-            window.crypto.getRandomValues(keyArray);
-            const blob = new Blob([keyArray], { type: 'application/octet-stream' });
-            const timestamp = new Date().getTime();
-            const fileName = `rakurl_key_${timestamp}.key`;
-            
-            appState.generatedKeyFile = { blob, name: fileName, data: keyArray };
-            return appState.generatedKeyFile;
-        }
-        
-        function downloadKeyFile() {
-            if (!appState.generatedKeyFile) {
-                showError('protectErrorKey', 'No hay ningún archivo .key para descargar');
-                return;
-            }
-            
-            const url = URL.createObjectURL(appState.generatedKeyFile.blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = appState.generatedKeyFile.name;
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
-            }, 100);
-        }
-        
+        function generateKeyFile() {
+            const keyArray = new Uint8Array(KEY_FILE_SIZE_BYTES);
+            window.crypto.getRandomValues(keyArray);
+            const blob = new Blob([keyArray], { type: 'application/octet-stream' });
+            const timestamp = new Date().getTime();
+            const fileName = `rakurl_key_${timestamp}.key`;
+            
+            appState.generatedKeyFile = { blob, name: fileName, data: keyArray };
+            return appState.generatedKeyFile;
+        }
+        
+        function downloadKeyFile() {
+            if (!appState.generatedKeyFile) {
+                showError('protectErrorKey', 'No hay ningún archivo .key para descargar');
+                return;
+            }
+            
+            const url = URL.createObjectURL(appState.generatedKeyFile.blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = appState.generatedKeyFile.name;
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => {
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }, 100);
+        }
+        
         /**
          * Deriva una clave criptográfica a partir del contenido de un archivo usando SHA-256.
          * @param {File} file - El archivo .key seleccionado.
          * @returns {Promise<string>} Una promesa que se resuelve con la clave en formato hexadecimal.
          */
-        async function getFileAsKey(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = event => resolve(getDataAsKey(event.target.result));
-                reader.onerror = () => reject(new Error('Error al leer el archivo'));
-                reader.readAsArrayBuffer(file);
-            });
-        }
-        
+        async function getFileAsKey(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = event => resolve(getDataAsKey(event.target.result));
+                reader.onerror = () => reject(new Error('Error al leer el archivo'));
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
         /**
          * Deriva una clave criptográfica a partir de datos binarios usando SHA-256.
          * @param {ArrayBuffer} data - Los datos binarios del archivo.
          * @returns {string} La clave en formato hexadecimal.
          */
-        function getDataAsKey(data) {
-            const wordArray = CryptoJS.lib.WordArray.create(data);
-            const hash = CryptoJS.SHA256(wordArray);
-            return hash.toString(CryptoJS.enc.Hex);
-        }
-        
+        function getDataAsKey(data) {
+            const wordArray = CryptoJS.lib.WordArray.create(data);
+            const hash = CryptoJS.SHA256(wordArray);
+            return hash.toString(CryptoJS.enc.Hex);
+        }
+        
         /**
          * Deriva una clave criptográfica a partir de una contraseña y un salt usando PBKDF2.
          * @param {string} password - La contraseña del usuario.
          * @param {CryptoJS.lib.WordArray} salt - El salt aleatorio.
          * @returns {string} La clave derivada en formato hexadecimal.
          */
-        function deriveKeyFromPassword(password, salt) {
-            return CryptoJS.PBKDF2(password, salt, {
-                keySize: 256 / 32,
-                iterations: PBKDF2_ITERATIONS
-            }).toString(CryptoJS.enc.Hex);
-        }
-        
+        function deriveKeyFromPassword(password, salt) {
+            return CryptoJS.PBKDF2(password, salt, {
+                keySize: 256 / 32,
+                iterations: PBKDF2_ITERATIONS
+            }).toString(CryptoJS.enc.Hex);
+        }
+        
         /**
          * Cifra una URL usando AES-256-CBC.
          * @param {string} url - La URL a cifrar.
          * @param {string} key - La clave de cifrado en formato hexadecimal.
          * @returns {string} El texto cifrado (IV + ciphertext) codificado en Base64 URL-safe.
          */
-        function encryptUrl(url, key) {
-            const keyWordArray = CryptoJS.enc.Hex.parse(key);
-            const iv = CryptoJS.lib.WordArray.random(16);
-            const encrypted = CryptoJS.AES.encrypt(url, keyWordArray, { iv: iv });
-            const combined = iv.clone().concat(encrypted.ciphertext);
-            let base64 = combined.toString(CryptoJS.enc.Base64);
-            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        }
-        
+        function encryptUrl(url, key) {
+            const keyWordArray = CryptoJS.enc.Hex.parse(key);
+            const iv = CryptoJS.lib.WordArray.random(16);
+            const encrypted = CryptoJS.AES.encrypt(url, keyWordArray, { iv: iv });
+            const combined = iv.clone().concat(encrypted.ciphertext);
+            let base64 = combined.toString(CryptoJS.enc.Base64);
+            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        }
+        
         /**
          * Descifra datos cifrados con AES-256-CBC.
          * @param {string} encryptedData - Los datos en Base64 URL-safe.
          * @param {string} key - La clave de descifrado en formato hexadecimal.
          * @returns {string|null} La URL original o null si hay un error.
          */
-        function decryptUrl(encryptedData, key) {
-            try {
-                const keyWordArray = CryptoJS.enc.Hex.parse(key);
-                let base64 = encryptedData.replace(/-/g, '+').replace(/_/g, '/');
-                while (base64.length % 4) { base64 += '='; }
-                
-                const combined = CryptoJS.enc.Base64.parse(base64);
-                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4));
-                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4));
-                
-                const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, keyWordArray, { iv: iv });
-                return decrypted.toString(CryptoJS.enc.Utf8);
-            } catch (error) {
-                console.error('Error descifrando:', error);
-                return null;
-            }
-        }
-        
+        function decryptUrl(encryptedData, key) {
+            try {
+                const keyWordArray = CryptoJS.enc.Hex.parse(key);
+                let base64 = encryptedData.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) { base64 += '='; }
+                
+                const combined = CryptoJS.enc.Base64.parse(base64);
+                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4));
+                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4));
+                
+                const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, keyWordArray, { iv: iv });
+                return decrypted.toString(CryptoJS.enc.Utf8);
+            } catch (error) {
+                console.error('Error descifrando:', error);
+                return null;
+            }
+        }
+        
         /**
          * Crea el payload JSON que se incluirá en el hash de la URL.
          * @param {string|null} salt - El salt en Base64 o null.
          * @param {string} encrypted - El texto cifrado en Base64 URL-safe.
          * @returns {string} El payload completo codificado en Base64 URL-safe.
          */
-        function createPayload(salt, encrypted) {
-            const payload = { v: PAYLOAD_VERSION, s: salt, c: encrypted };
-            const jsonString = JSON.stringify(payload);
-            let base64 = btoa(jsonString); // btoa funciona bien para UTF-8 básico
-            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-        }
-        
+        function createPayload(salt, encrypted) {
+            const payload = { v: PAYLOAD_VERSION, s: salt, c: encrypted };
+            const jsonString = JSON.stringify(payload);
+            let base64 = btoa(jsonString); // btoa funciona bien para UTF-8 básico
+            return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+        }
+        
         /**
          * Parsea el payload JSON del hash de la URL.
          * @param {string} payloadB64 - El payload en Base64 URL-safe.
          * @returns {object|null} El objeto de payload o null si hay un error.
          */
-        function parsePayload(payloadB64) {
-            try {
-                let base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
-                while (base64.length % 4) { base64 += '='; }
-                const jsonString = atob(base64);
-                return JSON.parse(jsonString);
-            } catch (error) {
-                console.error('Error parseando payload:', error);
-                return null;
-            }
-        }
-        
+        function parsePayload(payloadB64) {
+            try {
+                let base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+                while (base64.length % 4) { base64 += '='; }
+                const jsonString = atob(base64);
+                return JSON.parse(jsonString);
+            } catch (error) {
+                console.error('Error parseando payload:', error);
+                return null;
+            }
+        }
+        
         /**
          * Lógica principal para proteger una URL.
          */
-        async function protectUrl() {
-            const urlInput = document.getElementById('urlInput');
-            const resultContainer = document.getElementById('protectResult');
-            const passwordInput = document.getElementById('passwordInput');
-            const keyMethod = document.getElementById('keyMethod').checked;
+        async function protectUrl() {
+            const urlInput = document.getElementById('urlInput');
+            const resultContainer = document.getElementById('protectResult');
+            const passwordInput = document.getElementById('passwordInput');
+            const keyMethod = document.getElementById('keyMethod').checked;
             const qrcodeContainer = document.getElementById('qrcode');
-            
-            // Resetear UI
-            resultContainer.style.display = 'none';
+            
+            // Resetear UI
+            resultContainer.style.display = 'none';
             qrcodeContainer.style.display = 'none';
             qrcodeContainer.innerHTML = '';
-            hideError('protectErrorUrl');
-            hideError('protectErrorKey');
-            document.getElementById('protectSuccess').style.display = 'none';
-            document.getElementById('keyInfo').style.display = 'none';
-            
-            if (!urlInput.value || !urlInput.checkValidity()) {
-                showError('protectErrorUrl', 'La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.');
-                return;
-            }
-            
-            toggleLoading('protectBtn', 'protectBtnSpinner', true);
-            
+            hideError('protectErrorUrl');
+            hideError('protectErrorKey');
+            document.getElementById('protectSuccess').style.display = 'none';
+            document.getElementById('keyInfo').style.display = 'none';
+            
+            if (!urlInput.value || !urlInput.checkValidity()) {
+                showError('protectErrorUrl', 'La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.');
+                return;
+            }
+            
+            toggleLoading('protectBtn', 'protectBtnSpinner', true);
+
             // Usamos un timeout para permitir que la UI se actualice antes de la operación de cifrado
             setTimeout(async () => {
                 try {
@@ -807,6 +967,7 @@
                     } else {
                         if (!passwordInput.value) {
                             showError('protectErrorKey', 'Por favor, ingresa una contraseña para proteger el enlace.');
+                            toggleLoading('protectBtn', 'protectBtnSpinner', false);
                             return;
                         }
                         const saltWordArray = CryptoJS.lib.WordArray.random(16);
@@ -826,6 +987,7 @@
                     resultContainer.style.display = 'block';
                     document.getElementById('protectSuccess').style.display = 'block';
 
+                    // Generar código QR
                     new QRCode(qrcodeContainer, {
                         text: displayUrl,
                         width: 150,
@@ -844,29 +1006,29 @@
                     toggleLoading('protectBtn', 'protectBtnSpinner', false);
                 }
             }, 50); // 50ms de espera
-        }
-        
+        }
+        
         /**
          * Lógica principal para acceder a una URL protegida.
          */
-        async function accessUrl() {
-            const protectedUrlInput = document.getElementById('protectedUrlInput');
-            const keyFileInput = document.getElementById('keyFileInputAccess');
-            const accessPasswordInput = document.getElementById('accessPasswordInput');
-            const resultContainer = document.getElementById('accessResult');
-            const keyAccessMethod = document.getElementById('keyAccessMethod').checked;
-            
-            // Resetear UI
-            resultContainer.style.display = 'none';
-            ['accessErrorUrl', 'accessErrorKey', 'accessErrorMethodKey', 'accessErrorMethodFile'].forEach(hideError);
-            document.getElementById('accessSuccess').style.display = 'none';
-            
-            if (!protectedUrlInput.value) {
-                showError('accessErrorUrl', 'Por favor, pega el enlace protegido.');
-                return;
-            }
-            
-            toggleLoading('accessBtn', 'accessBtnSpinner', true);
+        async function accessUrl() {
+            const protectedUrlInput = document.getElementById('protectedUrlInput');
+            const keyFileInput = document.getElementById('keyFileInputAccess');
+            const accessPasswordInput = document.getElementById('accessPasswordInput');
+            const resultContainer = document.getElementById('accessResult');
+            const keyAccessMethod = document.getElementById('keyAccessMethod').checked;
+            
+            // Resetear UI
+            resultContainer.style.display = 'none';
+            ['accessErrorUrl', 'accessErrorKey', 'accessErrorMethodKey', 'accessErrorMethodFile'].forEach(hideError);
+            document.getElementById('accessSuccess').style.display = 'none';
+            
+            if (!protectedUrlInput.value) {
+                showError('accessErrorUrl', 'Por favor, pega el enlace protegido.');
+                return;
+            }
+            
+            toggleLoading('accessBtn', 'accessBtnSpinner', true);
 
             setTimeout(async () => {
                 try {
@@ -931,8 +1093,8 @@
                     toggleLoading('accessBtn', 'accessBtnSpinner', false);
                 }
             }, 50);
-        }
-        
+        }
+        
         function copyToClipboard(elementId, buttonElement) {
             const element = document.getElementById(elementId);
             element.select();
@@ -942,22 +1104,33 @@
                 .then(() => {
                     const originalText = buttonElement.textContent;
                     buttonElement.textContent = '¡Copiado!';
+                    
+                    // Añadir atributo ARIA para notificar a lectores de pantalla
+                    const originalAriaLabel = buttonElement.getAttribute('aria-label');
+                    buttonElement.setAttribute('aria-label', 'Texto copiado al portapapeles');
+                    
                     setTimeout(() => {
                         buttonElement.textContent = originalText;
+                        if (originalAriaLabel) {
+                            buttonElement.setAttribute('aria-label', originalAriaLabel);
+                        } else {
+                            buttonElement.removeAttribute('aria-label');
+                        }
                     }, 2000);
                 })
                 .catch(err => {
                     console.error('Error al copiar al portapapeles: ', err);
+                    showError('accessErrorKey', 'No se pudo copiar el texto al portapapeles.');
                 });
         }
-        
-        window.addEventListener('load', function() {
-            const hash = window.location.hash;
-            if (hash && hash.length > 1) {
-                document.getElementById('access-tab').click();
-                document.getElementById('protectedUrlInput').value = window.location.href;
-            }
-        });
-    </script>
-
-</body></html>
+        
+        window.addEventListener('load', function() {
+            const hash = window.location.hash;
+            if (hash && hash.length > 1) {
+                document.getElementById('access-tab').click();
+                document.getElementById('protectedUrlInput').value = window.location.href;
+            }
+        });
+    </script>
+</body>
+</html>
