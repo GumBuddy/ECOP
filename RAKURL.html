@@ -32,16 +32,108 @@
             --shadow-color: rgba(0,0,0,0.1);
         }
 
-        /* Modo nocturno */
+        /* Paleta 1: Púrpura y Carbón (Recomendada) */
         [data-theme="dark"] {
-            --bg-color: #121212;
-            --text-color: #e0e0e0;
-            --card-bg: #1e1e1e;
-            --input-bg: #2d2d2d;
-            --border-color: #444444;
-            --header-bg: #444444;
-            --footer-bg: #1e1e1e;
-            --shadow-color: rgba(0,0,0,0.3);
+            --bg-color: #1A1D24;        /* Gris carbón muy oscuro */
+            --text-color: #F0F2F5;       /* Blanco suave */
+            --card-bg: #252932;         /* Superficie un poco más clara que el fondo */
+            --input-bg: #2C313A;        /* Un poco más claro para destacar los inputs */
+            --border-color: #3C424E;    /* Borde sutil pero visible */
+            --header-bg: var(--primary-color); /* Mantenemos el color principal en el header */
+            --footer-bg: #1A1D24;       /* Mismo que el fondo principal */
+            --shadow-color: rgba(0,0,0,0.4);
+
+            /* Colores del modal de compartir */
+            --whatsapp-color: #25D366;
+            --telegram-color: #229ED9;
+            --messenger-color: #00B2FF;
+            --x-color: #ffffff;         /* X.com ahora usa logo blanco en fondo oscuro */
+            --instagram-color: #E1306C;
+        }
+
+        /* Ajustes adicionales para el modo oscuro con esta paleta */
+        [data-theme="dark"] .nav-tabs .nav-link {
+            color: #aeb8c4; /* Un color de texto más suave para las pestañas inactivas */
+        }
+        [data-theme="dark"] .nav-tabs .nav-link:hover {
+            background-color: rgba(108, 92, 231, 0.1);
+            border-bottom-color: rgba(108, 92, 231, 0.3);
+        }
+        [data-theme="dark"] .nav-tabs .nav-link.active {
+            color: white;
+            background-color: var(--primary-color);
+        }
+        [data-theme="dark"] .share-btn {
+            color: var(--text-color); /* Asegura que el texto sea legible */
+        }
+        [data-theme="dark"] .share-btn:hover {
+            color: var(--primary-color);
+        }
+        [data-theme="dark"] .modal-content {
+            background-color: var(--card-bg);
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .modal-header {
+            border-bottom-color: var(--border-color);
+        }
+        [data-theme="dark"] .modal-footer {
+            border-top-color: var(--border-color);
+        }
+        [data-theme="dark"] .btn-close {
+            filter: invert(1);
+        }
+        [data-theme="dark"] .form-control, 
+        [data-theme="dark"] .form-select {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+        [data-theme="dark"] .form-control:focus, 
+        [data-theme="dark"] .form-select:focus {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(108, 92, 231, 0.25);
+        }
+        [data-theme="dark"] .input-group-text {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+        [data-theme="dark"] .alert {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+        }
+        [data-theme="dark"] .alert-info {
+            background-color: rgba(25, 118, 210, 0.2);
+        }
+        [data-theme="dark"] .alert-warning {
+            background-color: rgba(255, 143, 0, 0.2);
+        }
+        [data-theme="dark"] .alert-success {
+            background-color: rgba(46, 125, 50, 0.2);
+        }
+        [data-theme="dark"] .security-tip {
+            background-color: rgba(255, 193, 7, 0.15);
+        }
+        [data-theme="dark"] .file-drop-area {
+            background-color: rgba(108, 92, 231, 0.05);
+        }
+        [data-theme="dark"] .file-drop-area:hover {
+            background-color: rgba(108, 92, 231, 0.1);
+        }
+        [data-theme="dark"] .file-drop-area.is-active {
+            background-color: rgba(108, 92, 231, 0.15);
+        }
+        [data-theme="dark"] .url-display-container {
+            background-color: var(--input-bg);
+            border-color: var(--border-color);
+        }
+        [data-theme="dark"] .logo-icon {
+            box-shadow: 0 4px 10px rgba(108, 92, 231, 0.4);
+        }
+        [data-theme="dark"] .share-btn.x .icon-wrapper {
+            background-color: #000000;
         }
 
         body {
@@ -457,7 +549,7 @@
         }
         .share-btn:hover {
             transform: scale(1.1);
-            color: #000;
+            color: var(--primary-color);
         }
         .share-btn .icon-wrapper {
             width: 50px;
