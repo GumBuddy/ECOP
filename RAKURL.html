@@ -426,18 +426,41 @@
             transition: width .6s ease;
         }
 
+        /* Estilos mejorados para el código QR */
         #qrcode {
             display: none;
-            margin-top: 25px;
+            margin: 25px auto;
             padding: 20px;
-            border-radius: 8px;
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background-color: #ffffff;
+            border: 4px solid #ffffff;
             width: fit-content;
-            margin-left: auto;
-            margin-right: auto;
             text-align: center;
-            box-shadow: 0 2px 10px var(--shadow-color);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            position: relative;
+        }
+
+        #qrcode:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+        }
+
+        #qrcode::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border-radius: 16px;
+            z-index: -1;
+            opacity: 0.7;
+        }
+
+        #qrcode canvas {
+            border-radius: 8px;
         }
 
         .form-check-input:checked {
@@ -748,6 +771,28 @@
             color: var(--warning-color);
             margin-right: 8px;
         }
+        
+        /* Botones de acción para el archivo .key */
+        .key-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .share-key-btn {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .share-key-btn:hover {
+            background-color: #2e7d32;
+            border-color: #2e7d32;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -846,10 +891,16 @@
                         <div class="key-info" id="keyInfo">
                             <h5><i class="bi bi-key-fill me-2" aria-hidden="true"></i>Archivo de Clave Generado</h5>
                             <p>Se ha generado una clave de seguridad única. Descárgala y guárdala en un lugar seguro. La necesitarás para acceder al enlace.</p>
-                            <button class="btn download-btn" id="downloadKeyBtn" aria-describedby="downloadKeyBtnHelp">
-                                <i class="bi bi-download me-2" aria-hidden="true"></i>Descargar Archivo .key
-                            </button>
+                            <div class="key-actions">
+                                <button class="btn download-btn" id="downloadKeyBtn" aria-describedby="downloadKeyBtnHelp">
+                                    <i class="bi bi-download me-2" aria-hidden="true"></i>Descargar Archivo .key
+                                </button>
+                                <button class="btn share-key-btn" id="shareKeyBtn" aria-describedby="shareKeyBtnHelp">
+                                    <i class="bi bi-share me-2" aria-hidden="true"></i>Compartir Archivo .key
+                                </button>
+                            </div>
                             <div id="downloadKeyBtnHelp" class="visually-hidden">Descarga el archivo de clave generado</div>
+                            <div id="shareKeyBtnHelp" class="visually-hidden">Comparte el archivo de clave generado</div>
                         </div>
                         
                         <div class="result-container" id="protectResult">
@@ -1155,6 +1206,9 @@
             // Botón para descargar archivo .key
             document.getElementById('downloadKeyBtn').addEventListener('click', downloadKeyFile);
             
+            // Botón para compartir archivo .key
+            document.getElementById('shareKeyBtn').addEventListener('click', shareKeyFile);
+            
             // Botón para compartir QR
             document.getElementById('shareQrBtn').addEventListener('click', shareQRCode);
             
@@ -1372,6 +1426,49 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
             }, 100);
+        }
+        
+        /**
+         * Comparte el archivo .key usando la API nativa si está disponible, 
+         * o muestra un mensaje de error si no es posible.
+         */
+        async function shareKeyFile() {
+            const shareBtn = document.getElementById('shareKeyBtn');
+            const originalBtnText = shareBtn.innerHTML;
+            
+            if (!appState.generatedKeyFile) {
+                showError('protectErrorKey', 'No hay ningún archivo .key para compartir');
+                return;
+            }
+            
+            shareBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Compartiendo...';
+            shareBtn.disabled = true;
+            
+            try {
+                // Mensaje personalizado para compartir
+                const shareMessage = "RAKURL Security: Este es tu archivo de clave de acceso:";
+                
+                // Comprobar si se puede usar la API nativa para compartir archivos
+                if (navigator.share && navigator.canShare({ files: [appState.generatedKeyFile.blob] })) {
+                    // Opción 1: Usar la API nativa
+                    await navigator.share({
+                        title: 'RAKURL Security - Archivo de Clave',
+                        text: shareMessage,
+                        files: [appState.generatedKeyFile.blob]
+                    });
+                } else {
+                    // Opción 2: El navegador no es compatible, mostrar mensaje
+                    showError('protectErrorKey', 'Tu navegador no es compatible con la función de compartir archivos. Por favor, descarga el archivo y compártelo manualmente.');
+                }
+            } catch (error) {
+                console.error('Error al compartir:', error);
+                if (error.name !== 'AbortError') { // Ignorar si el usuario cancela la acción
+                    showError('protectErrorKey', 'No se pudo compartir el archivo .key.');
+                }
+            } finally {
+                shareBtn.innerHTML = originalBtnText;
+                shareBtn.disabled = false;
+            }
         }
         
         /**
