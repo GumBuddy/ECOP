@@ -18,7 +18,8 @@
             --whatsapp-color: #25D366;
             --telegram-color: #0088cc;
             --messenger-color: #00B2FF;
-            --x-color: #000000;
+            --x-color: #000000; /* Color de X (negro) */
+            --x-icon-color: #ffffff; /* Color del icono de X (blanco) */
             --instagram-color: #E1306C;
             --dark-color: #212529;
             --light-color: #f8f9fa;
@@ -47,7 +48,8 @@
             --whatsapp-color: #25D366;
             --telegram-color: #229ED9;
             --messenger-color: #00B2FF;
-            --x-color: #ffffff;         /* X.com ahora usa logo blanco en fondo oscuro */
+            --x-color: #000000;         /* X.com ahora usa logo negro en fondo oscuro */
+            --x-icon-color: #ffffff;   /* Icono blanco para contraste con fondo negro */
             --instagram-color: #E1306C;
         }
 
@@ -131,9 +133,6 @@
         }
         [data-theme="dark"] .logo-icon {
             box-shadow: 0 4px 10px rgba(108, 92, 231, 0.4);
-        }
-        [data-theme="dark"] .share-btn.x .icon-wrapper {
-            background-color: #000000;
         }
 
         body {
@@ -558,18 +557,38 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: white;
             font-size: 24px;
             margin-bottom: 5px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
         }
-        .share-btn.whatsapp .icon-wrapper { background-color: var(--whatsapp-color); }
-        .share-btn.telegram .icon-wrapper { background-color: var(--telegram-color); }
-        .share-btn.messenger .icon-wrapper { background-color: var(--messenger-color); }
-        .share-btn.x .icon-wrapper { background-color: var(--x-color); }
-        .share-btn.instagram .icon-wrapper { background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%); }
-        .share-btn.download .icon-wrapper { background-color: var(--secondary-color); }
-        .share-btn.native-share .icon-wrapper { background-color: #7f8c8d; }
+        .share-btn.whatsapp .icon-wrapper { 
+            background-color: var(--whatsapp-color);
+            color: white;
+        }
+        .share-btn.telegram .icon-wrapper { 
+            background-color: var(--telegram-color);
+            color: white;
+        }
+        .share-btn.messenger .icon-wrapper { 
+            background-color: var(--messenger-color);
+            color: white;
+        }
+        .share-btn.x .icon-wrapper { 
+            background-color: var(--x-color);
+            color: var(--x-icon-color);
+        }
+        .share-btn.instagram .icon-wrapper { 
+            background: linear-gradient(45deg, #f09433 0%,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888 100%);
+            color: white;
+        }
+        .share-btn.download .icon-wrapper { 
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        .share-btn.native-share .icon-wrapper { 
+            background-color: #7f8c8d;
+            color: white;
+        }
         
         /* Mejoras visuales adicionales */
         .form-control:focus, .form-select:focus {
@@ -1000,7 +1019,10 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body">
-                    <p>Comparte la clave generada o el código QR para que otros puedan acceder al enlace protegido.</p>                    
+                    <p>Comparte el código de acceso para que otros puedan acceder al enlace protegido.</p>
+                    <div id="modalQrContainer">
+                        <img id="modalQrImage" src="" alt="Código QR del enlace protegido" class="img-fluid" style="max-width: 200px; border-radius: 8px;">
+                    </div>
                     <div class="share-buttons">
                         <a href="#" id="shareWhatsapp" class="share-btn whatsapp" target="_blank" rel="noopener noreferrer">
                             <div class="icon-wrapper"><i class="bi bi-whatsapp"></i></div>
@@ -1488,28 +1510,33 @@
          * Configura los botones para compartir en redes sociales
          */
         function setupShareButtons() {
-            const protectedUrl = document.getElementById('protectedUrl').value;
+            // Obtener el payload (código cifrado) del textarea
+            const payload = document.getElementById('protectedUrlDisplay').value;
             const qrImage = appState.qrCodeImage;
             
-            if (!protectedUrl || !qrImage) return;
+            if (!payload || !qrImage) return;
+            
+            // Mensaje personalizado para compartir
+            const shareMessage = "RAKURL Security: Este es tu Código de acceso:";
+            const fullMessage = `${shareMessage}\n\n${payload}`;
             
             // Configurar botón de WhatsApp
             const whatsappBtn = document.getElementById('shareWhatsapp');
-            const whatsappText = encodeURIComponent(`Accede a este enlace protegido con RAKURL Security: ${protectedUrl}`);
+            const whatsappText = encodeURIComponent(fullMessage);
             whatsappBtn.href = `https://wa.me/?text=${whatsappText}`;
             
             // Configurar botón de Telegram
             const telegramBtn = document.getElementById('shareTelegram');
-            const telegramText = encodeURIComponent(`Accede a este enlace protegido con RAKURL Security: ${protectedUrl}`);
-            telegramBtn.href = `https://t.me/share/url?url=${encodeURIComponent(protectedUrl)}&text=${telegramText}`;
+            const telegramText = encodeURIComponent(fullMessage);
+            telegramBtn.href = `https://t.me/share/url?url=${encodeURIComponent(payload)}&text=${telegramText}`;
             
             // Configurar botón de Messenger
             const messengerBtn = document.getElementById('shareMessenger');
-            messengerBtn.href = `https://www.facebook.com/dialog/send?link=${encodeURIComponent(protectedUrl)}&redirect_uri=${encodeURIComponent(window.location.href)}`;
+            messengerBtn.href = `https://www.facebook.com/dialog/send?link=${encodeURIComponent(payload)}&quote=${encodeURIComponent(shareMessage)}&redirect_uri=${encodeURIComponent(window.location.href)}`;
             
             // Configurar botón de X (Twitter)
             const xBtn = document.getElementById('shareX');
-            const xText = encodeURIComponent(`Accede a este enlace protegido con RAKURL Security: ${protectedUrl}`);
+            const xText = encodeURIComponent(fullMessage);
             xBtn.href = `https://twitter.com/intent/tweet?text=${xText}`;
             
             // Configurar botón de Instagram
@@ -1536,11 +1563,11 @@
                     const blob = await response.blob();
                     const file = new File([blob], 'rakurl_qr.png', { type: 'image/png' });
                     
-                    // Compartir el archivo
-                    if (navigator.share && navigator.canShare({ files: [file] })) {
+                    // Compartir el archivo y el texto
+                    if (navigator.share && navigator.canShare({ files: [file], text: fullMessage })) {
                         await navigator.share({
                             title: 'RAKURL Security - Código de Acceso',
-                            text: 'Escanea este código QR para acceder al enlace protegido',
+                            text: fullMessage,
                             files: [file]
                         });
                     } else {
