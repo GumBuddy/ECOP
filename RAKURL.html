@@ -414,7 +414,7 @@
                         </div>
                         
                         <div class="success-message" id="protectSuccess" role="alert">
-                            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>¡Enlace protegido exitosamente con RAKURL Security! Copia el enlace generado y guarda tu método de acceso.
+                            <i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>¡Enlace protegido exitosamente con RAKURL Security! Copia el código generado y guarda tu método de acceso.
                         </div>
                         
                         <div class="key-info" id="keyInfo">
@@ -428,24 +428,24 @@
                         
                         <div class="result-container" id="protectResult">
                             <hr>
-                            <h5>Enlace Protegido por RAKURL Security <span class="privacy-badge">PRIVADO</span></h5>
+                            <h5>Código de Acceso Protegido <span class="privacy-badge">PRIVADO</span></h5>
                             
                             <div class="url-display-container">
-                                <textarea class="url-display" id="protectedUrlDisplay" readonly rows="3" aria-label="URL protegida visible"></textarea>
+                                <textarea class="url-display" id="protectedUrlDisplay" readonly rows="3" aria-label="Código de acceso protegido"></textarea>
                             </div>
                             
                             <!-- Input oculto para la URL real -->
                             <input type="text" class="form-control" id="protectedUrl" readonly aria-label="URL protegida real">
                             
                             <div class="d-grid mb-3">
-                                <button class="btn btn-outline-primary" type="button" id="copyDisplayUrl" aria-describedby="copyDisplayUrlHelp">Copiar URL visible</button>
+                                <button class="btn btn-outline-primary" type="button" id="copyDisplayUrl" aria-describedby="copyDisplayUrlHelp">Copiar Código</button>
                             </div>
-                            <div id="copyDisplayUrlHelp" class="visually-hidden">Copia la URL protegida visible al portapapeles</div>
+                            <div id="copyDisplayUrlHelp" class="visually-hidden">Copia el código de acceso protegido al portapapeles</div>
                                 
                             <div id="qrcode" aria-label="Código QR del enlace protegido"></div>
                             
                             <div class="alert alert-warning mt-3" role="alert">
-                                <strong>Importante:</strong> Guarda este enlace protegido y tu método de acceso (archivo .key o contraseña). Necesitarás ambos para acceder al enlace original.
+                                <strong>Importante:</strong> Guarda este código y tu método de acceso (archivo .key o contraseña). Para acceder al enlace original, solo necesitarás este código y tu método de acceso.
                             </div>
                         </div>
                     </div>
@@ -459,8 +459,8 @@
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <label for="protectedUrlInput" class="form-label">Enlace protegido</label>
-                            <input type="text" class="form-control" id="protectedUrlInput" placeholder="Pega aquí el enlace protegido por RAKURL Security" required>
+                            <label for="protectedUrlInput" class="form-label">Código de acceso</label>
+                            <input type="text" class="form-control" id="protectedUrlInput" placeholder="Pega aquí el código de acceso protegido" required>
                         </div>
                         
                         <div class="mb-3">
@@ -506,7 +506,7 @@
                         <div id="accessBtnHelp" class="visually-hidden">Acceder al enlace protegido usando el método seleccionado</div>
                         
                         <div class="error-message error-url" id="accessErrorUrl" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>La URL proporcionada no coincide con ningún enlace protegido por RAKURL Security. Verifica la URL e intenta nuevamente.
+                            <i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>El código proporcionado no coincide con ningún enlace protegido por RAKURL Security. Verifica el código e intenta nuevamente.
                         </div>
                         
                         <div class="error-message error-key" id="accessErrorKey" role="alert">
@@ -549,8 +549,8 @@
                 <p>RAKURL Security (RANDOM ACCESS KEY URL SECURITY) es una aplicación que te permite proteger y cifrar enlaces.</p>
                 <ol>
                     <li><strong>Proteger un enlace:</strong> Ingresa la URL que deseas proteger. RAKURL Security generará automáticamente un archivo .key con números aleatorios o podrás usar una contraseña.</li>
-                    <li><strong>Generar enlace protegido:</strong> RAKURL Security creará un enlace protegido que contiene la URL original cifrada con el método seleccionado.</li>
-                    <li><strong>Acceder al enlace:</strong> Para acceder al enlace original, necesitarás el enlace protegido y el método de acceso que generó RAKURL Security al protegerlo.</li>
+                    <li><strong>Generar código de acceso:</strong> RAKURL Security creará un código único que contiene la URL original cifrada con el método seleccionado.</li>
+                    <li><strong>Acceder al enlace:</strong> Para acceder al enlace original, necesitarás el código generado y el método de acceso que generaste al protegerlo.</li>
                 </ol>
                 <p class="mb-0"><strong>Nota:</strong> Toda la encriptación y desencriptación se realiza localmente en tu dispositivo. No se envía ninguna información a servidores externos, esto es completamente anónimo.</p>
             </div>
@@ -565,9 +565,6 @@
         // Constantes para números mágicos
         const KEY_FILE_SIZE_BYTES = 12000;
         const PBKDF2_ITERATIONS = 10000;
-        
-        // URL base personalizada para mostrar al usuario
-        const CUSTOM_BASE_URL = "https://secure.rakurl/access#";
         
         // Versión del formato de payload
         const PAYLOAD_VERSION = 1;
@@ -978,18 +975,19 @@
                     const encrypted = encryptUrl(urlInput.value, key);
                     const payload = createPayload(salt, encrypted);
                     const realUrl = `${window.location.href.split('#')[0]}#${payload}`;
-                    const displayUrl = `${CUSTOM_BASE_URL}${payload}`;
                     
-                    appState.displayUrl = displayUrl;
-                    
+                    // Almacenar la URL real en el campo oculto
                     document.getElementById('protectedUrl').value = realUrl;
-                    document.getElementById('protectedUrlDisplay').value = displayUrl;
+                    
+                    // Mostrar solo el payload (código encriptado) en el textarea visible
+                    document.getElementById('protectedUrlDisplay').value = payload;
+                    
                     resultContainer.style.display = 'block';
                     document.getElementById('protectSuccess').style.display = 'block';
 
-                    // Generar código QR
+                    // Generar código QR con solo el payload
                     new QRCode(qrcodeContainer, {
-                        text: displayUrl,
+                        text: payload,
                         width: 150,
                         height: 150,
                         correctLevel : QRCode.CorrectLevel.H
@@ -1024,7 +1022,7 @@
             document.getElementById('accessSuccess').style.display = 'none';
             
             if (!protectedUrlInput.value) {
-                showError('accessErrorUrl', 'Por favor, pega el enlace protegido.');
+                showError('accessErrorUrl', 'Por favor, pega el código de acceso.');
                 return;
             }
             
@@ -1032,21 +1030,21 @@
 
             setTimeout(async () => {
                 try {
-                    let urlToProcess = protectedUrlInput.value;
-                    if (urlToProcess.startsWith(CUSTOM_BASE_URL)) {
-                        const hash = urlToProcess.substring(CUSTOM_BASE_URL.length);
-                        urlToProcess = `${window.location.href.split('#')[0]}#${hash}`;
+                    let payloadB64 = protectedUrlInput.value;
+                    
+                    // Si el usuario pegó una URL completa, extraemos el payload
+                    if (payloadB64.includes('#')) {
+                        payloadB64 = payloadB64.split('#')[1];
                     }
-
-                    const payloadB64 = urlToProcess.includes('#') ? urlToProcess.split('#')[1] : urlToProcess;
+                    
                     if (!payloadB64) {
-                        showError('accessErrorUrl', 'El enlace no contiene datos protegidos.');
+                        showError('accessErrorUrl', 'El código no contiene datos válidos.');
                         return;
                     }
                     
                     const parsedPayload = parsePayload(payloadB64);
                     if (!parsedPayload || parsedPayload.v !== PAYLOAD_VERSION) {
-                        showError('accessErrorUrl', 'El formato del enlace es inválido o incompatible.');
+                        showError('accessErrorUrl', 'El formato del código es inválido o incompatible.');
                         return;
                     }
 
@@ -1128,7 +1126,9 @@
             const hash = window.location.hash;
             if (hash && hash.length > 1) {
                 document.getElementById('access-tab').click();
-                document.getElementById('protectedUrlInput').value = window.location.href;
+                // Extraer solo el payload del hash
+                const payload = hash.substring(1);
+                document.getElementById('protectedUrlInput').value = payload;
             }
         });
     </script>
