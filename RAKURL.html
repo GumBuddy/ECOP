@@ -1434,44 +1434,41 @@
          * o muestra un mensaje de error si no es posible.
          */
         async function shareKeyFile() {
-            const shareBtn = document.getElementById('shareKeyBtn');
-            const originalBtnText = shareBtn.innerHTML;
+                const shareBtn = document.getElementById('shareKeyBtn');
+                const originalBtnHTML = shareBtn.innerHTML; // Usamos innerHTML para guardar el icono y el texto
             
-            if (!appState.generatedKeyFile) {
-                showError('protectErrorKey', 'No hay ningún archivo .key para compartir');
-                return;
-            }
-            
-            shareBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Compartiendo...';
-            shareBtn.disabled = true;
-            
-            try {
-                // Mensaje personalizado para compartir
-                const shareMessage = "RAKURL Security: Este es tu archivo de clave de acceso:";
-                
-                // Crear un objeto File con el tipo text/plain para compatibilidad con la API de compartir
-                const file = new File([appState.generatedKeyFile.blob], appState.generatedKeyFile.name, { type: 'text/plain' });
-                
-                // Comprobar si se puede usar la API nativa para compartir archivos
-                if (navigator.share && navigator.canShare({ files: [file] })) {
-                    // Opción 1: Usar la API nativa
-                    await navigator.share({
-                        title: 'RAKURL Security - Archivo de Clave',
-                        text: shareMessage,
-                        files: [file]
-                    });
-                } else {
-                    // Opción 2: El navegador no es compatible, mostrar mensaje
-                    showError('protectErrorKey', 'Tu navegador no es compatible con la función de compartir archivos. Por favor, descarga el archivo y compártelo manualmente.');
+                if (!appState.generatedKeyFile) {
+                    showError('protectErrorKey', 'No hay ningún archivo .key para compartir');
+                    return;
                 }
-            } catch (error) {
-                console.error('Error al compartir:', error);
-                if (error.name !== 'AbortError') { // Ignorar si el usuario cancela la acción
-                    showError('protectErrorKey', 'No se pudo compartir el archivo .key.');
+            
+                shareBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Compartiendo...';
+                shareBtn.disabled = true;
+            
+                try {
+                    const shareMessage = "RAKURL Security: Este es tu archivo de clave de acceso. ¡Guárdalo en un lugar seguro!";                       
+                    const originalName = appState.generatedKeyFile.name;
+                    const shareName = originalName.replace('.key', '.txt');
+                    const fileToShare = new File([appState.generatedKeyFile.blob], shareName, { type: 'text/plain' });
+                    // Comprobamos si se puede compartir el nuevo archivo 'fileToShare'
+                    if (navigator.share && navigator.canShare({ files: [fileToShare] })) {
+                        await navigator.share({
+                            title: 'RAKURL Security - Archivo de Clave',
+                            text: shareMessage,
+                            files: [fileToShare] // Usamos el nuevo archivo con la extensión .txt
+                        });
+                    } else {
+                        showError('protectErrorKey', 'Tu navegador no es compatible con la función de compartir archivos. Por favor, descarga el archivo y compártelo manualmente.');
+                    }
+                } catch (error) {
+                    console.error('Error al compartir:', error);
+                    if (error.name !== 'AbortError') { // Ignorar si el usuario cancela la acción
+                        showError('protectErrorKey', 'No se pudo compartir el archivo .key.');
+                    }
+                } finally {
+                    shareBtn.innerHTML = originalBtnHTML;
+                    shareBtn.disabled = false;
                 }
-            } finally {
-                shareBtn.innerHTML = originalBtnText;
-                shareBtn.disabled = false;
             }
         }
         
