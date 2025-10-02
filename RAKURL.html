@@ -793,6 +793,22 @@
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
+        
+        /* Estilos para botón de compartir en móvil */
+        .mobile-share-btn {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .mobile-share-btn:hover {
+            background-color: #2e7d32;
+            border-color: #2e7d32;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
@@ -892,15 +908,18 @@
                             <h5><i class="bi bi-key-fill me-2" aria-hidden="true"></i>Archivo de Clave Generado</h5>
                             <p>Se ha generado una clave de seguridad única. Descárgala y guárdala en un lugar seguro. La necesitarás para acceder al enlace.</p>
                             <div class="key-actions">
-                                <button class="btn download-btn" id="downloadKeyBtn" aria-describedby="downloadKeyBtnHelp">
+                                <!-- Botón para descargar archivo .key (visible solo en computadora) -->
+                                <button class="btn download-btn desktop-only" id="downloadKeyBtn" aria-describedby="downloadKeyBtnHelp">
                                     <i class="bi bi-download me-2" aria-hidden="true"></i>Descargar Archivo .key
                                 </button>
-                                <button class="btn share-qr-btn" id="shareKeyBtn" aria-describedby="shareKeyBtnHelp">
+                                <div id="downloadKeyBtnHelp" class="visually-hidden">Descarga el archivo de clave generado</div>
+                                
+                                <!-- Botón para compartir archivo .key (visible solo en móvil) -->
+                                <button class="btn mobile-share-btn mobile-only" id="shareKeyBtn" aria-describedby="shareKeyBtnHelp">
                                     <i class="bi bi-share me-2" aria-hidden="true"></i>Compartir Archivo .key
                                 </button>
+                                <div id="shareKeyBtnHelp" class="visually-hidden">Comparte el archivo de clave generado</div>
                             </div>
-                            <div id="downloadKeyBtnHelp" class="visually-hidden">Descarga el archivo de clave generado</div>
-                            <div id="shareKeyBtnHelp" class="visually-hidden">Comparte el archivo de clave generado</div>
                         </div>
                         
                         <div class="result-container" id="protectResult">
@@ -1118,46 +1137,163 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script>
-        // Constantes para números mágicos
-        const KEY_FILE_SIZE_BYTES = 12000;
-        const PBKDF2_ITERATIONS = 10000;
+        /**
+         * =================================================================
+         * CONSTANTES DE CONFIGURACIÓN
+         * =================================================================
+         * Estas constantes definen parámetros importantes para el 
+         * funcionamiento de la aplicación.
+         */
         
-        // Versión del formato de payload
-        const PAYLOAD_VERSION = 1;
+        // Tamaño del archivo de clave en bytes (12KB)
+        const TAMANO_ARCHIVO_CLAVE_BYTES = 12000;
         
-        // Estado de la aplicación encapsulado
-        const appState = {
-            generatedKeyFile: null,
-            displayUrl: null,
-            baseUrl: window.location.href.split('#')[0], // URL base sin hash
-            qrCodeImage: null // Almacenará la imagen del QR como data URL
+        // Número de iteraciones para el algoritmo PBKDF2 (para derivar claves de contraseñas)
+        const ITERACIONES_PBKDF2 = 10000;
+        
+        // Versión del formato de payload utilizado para codificar la información
+        const VERSION_PAYLOAD = 1;
+        
+        /**
+         * =================================================================
+         * ESTADO GLOBAL DE LA APLICACIÓN
+         * =================================================================
+         * Este objeto almacena el estado de la aplicación que necesita
+         * persistir entre diferentes operaciones.
+         */
+        const estadoAplicacion = {
+            archivoClaveGenerado: null,      // Almacena el archivo .key generado
+            urlProtegida: null,               // Almacena la URL protegida generada
+            urlBase: window.location.href.split('#')[0], // URL base sin parámetros
+            imagenCodigoQR: null,             // Almacena la imagen del código QR como Data URL
+            esDispositivoMovil: false         // Indica si el usuario está en un dispositivo móvil
         };
         
-        // Configuración del modo nocturno
+        /**
+         * =================================================================
+         * INICIALIZACIÓN DE LA APLICACIÓN
+         * =================================================================
+         * Este código se ejecuta cuando el DOM está completamente cargado.
+         */
         document.addEventListener('DOMContentLoaded', function() {
+            // Detectar tipo de dispositivo
+            detectarTipoDispositivo();
+            
+            // Configurar el modo nocturno según las preferencias guardadas
+            configurarModoNocturno();
+            
+            // Configurar las áreas de arrastrar y soltar archivos
+            configurarAreaArrastrarSoltar('fileDropAreaAccess', 'keyFileInputAccess');
+            
+            // Configurar los eventos para cambiar entre métodos de protección
+            configurarEventosMetodosProteccion();
+            
+            // Configurar los eventos para cambiar entre métodos de acceso
+            configurarEventosMetodosAcceso();
+            
+            // Configurar los botones principales
+            configurarBotonesPrincipales();
+            
+            // Configurar los botones para mostrar/ocultar contraseñas
+            configurarBotonesContrasena();
+            
+            // Configurar el medidor de fortaleza de contraseña
+            configurarMedidorFortalezaContrasena();
+            
+            // Configurar eventos para el modal de compartir
+            configurarModalCompartir();
+            
+            // Escuchar cambios de tamaño de ventana para actualizar la detección de dispositivo
+            window.addEventListener('resize', detectarTipoDispositivo);
+        });
+        
+        /**
+         * Detecta si el usuario está en un dispositivo móvil o escritorio
+         */
+        function detectarTipoDispositivo() {
+            // Comprobamos si el agente de usuario contiene palabras clave de dispositivos móviles
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            
+            // Palabras clave que indican dispositivos móviles
+            const mobileKeywords = [
+                'Android', 'webOS', 'iPhone', 'iPad', 'iPod', 'BlackBerry', 
+                'Windows Phone', 'Mobile', 'Opera Mini', 'IEMobile'
+            ];
+            
+            // Si alguna de las palabras clave está en el agente de usuario, es móvil
+            const esMovilPorAgente = mobileKeywords.some(keyword => userAgent.includes(keyword));
+            
+            // También comprobamos la anchura de la ventana (menos de 768px se considera móvil)
+            const esMovilPorAncho = window.innerWidth < 768;
+            
+            // Consideramos móvil si alguna de las dos condiciones se cumple
+            estadoAplicacion.esDispositivoMovil = esMovilPorAgente || esMovilPorAncho;
+            
+            // Actualizar la visibilidad de los botones según el dispositivo
+            actualizarVisibilidadBotonesSegunDispositivo();
+        }
+        
+        /**
+         * Actualiza la visibilidad de los botones según el tipo de dispositivo
+         */
+        function actualizarVisibilidadBotonesSegunDispositivo() {
+            const botonDescargar = document.getElementById('downloadKeyBtn');
+            const botonCompartir = document.getElementById('shareKeyBtn');
+            
+            if (estadoAplicacion.esDispositivoMovil) {
+                // En móvil: ocultar botón de descargar, mostrar botón de compartir
+                if (botonDescargar) botonDescargar.style.display = 'none';
+                if (botonCompartir) botonCompartir.style.display = 'inline-block';
+            } else {
+                // En escritorio: mostrar botón de descargar, ocultar botón de compartir
+                if (botonDescargar) botonDescargar.style.display = 'inline-block';
+                if (botonCompartir) botonCompartir.style.display = 'none';
+            }
+        }
+        
+        /**
+         * Configura el modo nocturno según las preferencias del usuario
+         */
+        function configurarModoNocturno() {
             // Verificar si hay un tema guardado en localStorage
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme) {
-                document.documentElement.setAttribute('data-theme', savedTheme);
-                updateThemeIcon(savedTheme);
+            const temaGuardado = localStorage.getItem('theme');
+            if (temaGuardado) {
+                document.documentElement.setAttribute('data-theme', temaGuardado);
+                actualizarIconoTema(temaGuardado);
             }
             
             // Configurar el botón de cambio de tema
-            const themeToggle = document.getElementById('themeToggle');
-            themeToggle.addEventListener('click', function() {
-                const currentTheme = document.documentElement.getAttribute('data-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            const botonTema = document.getElementById('themeToggle');
+            botonTema.addEventListener('click', function() {
+                const temaActual = document.documentElement.getAttribute('data-theme');
+                const nuevoTema = temaActual === 'dark' ? 'light' : 'dark';
                 
                 // Aplicar el nuevo tema
-                document.documentElement.setAttribute('data-theme', newTheme);
-                localStorage.setItem('theme', newTheme);
-                updateThemeIcon(newTheme);
+                document.documentElement.setAttribute('data-theme', nuevoTema);
+                localStorage.setItem('theme', nuevoTema);
+                actualizarIconoTema(nuevoTema);
             });
-            
-            // Configurar área de arrastrar y soltar para acceso
-            setupFileDropArea('fileDropAreaAccess', 'keyFileInputAccess');
-            
-            // Configurar eventos para cambiar entre métodos de protección
+        }
+        
+        /**
+         * Actualiza el icono del tema según el modo actual
+         * @param {string} tema - El tema actual ('light' o 'dark')
+         */
+        function actualizarIconoTema(tema) {
+            const iconoTema = document.getElementById('themeIcon');
+            if (tema === 'dark') {
+                iconoTema.classList.remove('bi-moon-fill');
+                iconoTema.classList.add('bi-sun-fill');
+            } else {
+                iconoTema.classList.remove('bi-sun-fill');
+                iconoTema.classList.add('bi-moon-fill');
+            }
+        }
+        
+        /**
+         * Configura los eventos para cambiar entre métodos de protección
+         */
+        function configurarEventosMetodosProteccion() {
             document.getElementById('keyMethod').addEventListener('change', function() {
                 document.querySelector('.key-method-section').style.display = 'block';
                 document.querySelector('.password-section').style.display = 'none';
@@ -1167,8 +1303,12 @@
                 document.querySelector('.key-method-section').style.display = 'none';
                 document.querySelector('.password-section').style.display = 'block';
             });
-            
-            // Configurar eventos para cambiar entre métodos de acceso
+        }
+        
+        /**
+         * Configura los eventos para cambiar entre métodos de acceso
+         */
+        function configurarEventosMetodosAcceso() {
             document.getElementById('keyAccessMethod').addEventListener('change', function() {
                 document.querySelector('.key-access-section').style.display = 'block';
                 document.querySelector('.password-access-section').style.display = 'none';
@@ -1178,21 +1318,26 @@
                 document.querySelector('.key-access-section').style.display = 'none';
                 document.querySelector('.password-access-section').style.display = 'block';
             });
-            
+        }
+        
+        /**
+         * Configura los botones principales de la aplicación
+         */
+        function configurarBotonesPrincipales() {
             // Botón para proteger enlace
-            document.getElementById('protectBtn').addEventListener('click', protectUrl);
+            document.getElementById('protectBtn').addEventListener('click', protegerUrl);
             
             // Botón para acceder a enlace
-            document.getElementById('accessBtn').addEventListener('click', accessUrl);
+            document.getElementById('accessBtn').addEventListener('click', accederUrl);
             
             // Botón para copiar URL visible
             document.getElementById('copyDisplayUrl').addEventListener('click', function() {
-                copyToClipboard('protectedUrlDisplay', this);
+                copiarAlPortapapeles('protectedUrlDisplay', this);
             });
             
             // Botón para copiar URL original
             document.getElementById('copyOriginalUrl').addEventListener('click', function() {
-                copyToClipboard('originalUrl', this);
+                copiarAlPortapapeles('originalUrl', this);
             });
             
             // Botón para visitar enlace original
@@ -1203,346 +1348,445 @@
                 }
             });
             
-            // Botón para descargar archivo .key
-            document.getElementById('downloadKeyBtn').addEventListener('click', downloadKeyFile);
+            // Botón para descargar archivo .key (solo visible en escritorio)
+            const botonDescargar = document.getElementById('downloadKeyBtn');
+            if (botonDescargar) {
+                botonDescargar.addEventListener('click', descargarArchivoClave);
+            }
             
-            // Botón para compartir archivo .key
-            document.getElementById('shareKeyBtn').addEventListener('click', shareKeyFile);
+            // Botón para compartir archivo .key (solo visible en móvil)
+            const botonCompartir = document.getElementById('shareKeyBtn');
+            if (botonCompartir) {
+                botonCompartir.addEventListener('click', compartirArchivoClave);
+            }
             
             // Botón para compartir QR
-            document.getElementById('shareQrBtn').addEventListener('click', shareQRCode);
-            
-            // Configurar botones para mostrar/ocultar contraseña
-            setupPasswordToggles();
-
-            // Configurar medidor de fortaleza de contraseña
-            document.getElementById('passwordInput').addEventListener('input', function() {
-                checkPasswordStrength(this.value);
-            });
-            
-            // Configurar eventos para el modal de compartir
-            const shareModal = document.getElementById('shareModal');
-            shareModal.addEventListener('shown.bs.modal', function () {
-                populateShareModal();
-            });
-        });
-        
-        /**
-         * Actualiza el icono del tema según el modo actual
-         * @param {string} theme - El tema actual ('light' o 'dark')
-         */
-        function updateThemeIcon(theme) {
-            const themeIcon = document.getElementById('themeIcon');
-            if (theme === 'dark') {
-                themeIcon.classList.remove('bi-moon-fill');
-                themeIcon.classList.add('bi-sun-fill');
-            } else {
-                themeIcon.classList.remove('bi-sun-fill');
-                themeIcon.classList.add('bi-moon-fill');
-            }
+            document.getElementById('shareQrBtn').addEventListener('click', compartirCodigoQR);
         }
         
         /**
-         * Configura los botones para mostrar/ocultar la contraseña en los campos de tipo password.
+         * Configura los botones para mostrar/ocultar la contraseña
          */
-        function setupPasswordToggles() {
-            const toggleButtons = document.querySelectorAll('.toggle-password');
+        function configurarBotonesContrasena() {
+            const botonesToggle = document.querySelectorAll('.toggle-password');
             
-            toggleButtons.forEach(button => {
-                button.addEventListener('click', function() {
-                    togglePasswordVisibility(this);
+            botonesToggle.forEach(boton => {
+                boton.addEventListener('click', function() {
+                    alternarVisibilidadContrasena(this);
                 });
                 
                 // Soporte para teclado
-                button.addEventListener('keydown', function(e) {
+                boton.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        togglePasswordVisibility(this);
+                        alternarVisibilidadContrasena(this);
                     }
                 });
             });
             
-            function togglePasswordVisibility(button) {
-                const targetId = button.getAttribute('data-target');
-                const targetInput = document.getElementById(targetId);
-                const icon = button.querySelector('i');
+            /**
+             * Alterna la visibilidad de una contraseña
+             * @param {HTMLElement} boton - El botón que activa/desactiva la visibilidad
+             */
+            function alternarVisibilidadContrasena(boton) {
+                const idObjetivo = boton.getAttribute('data-target');
+                const inputObjetivo = document.getElementById(idObjetivo);
+                const icono = boton.querySelector('i');
                 
-                if (targetInput.type === 'password') {
-                    targetInput.type = 'text';
-                    icon.classList.remove('bi-eye');
-                    icon.classList.add('bi-eye-slash');
-                    button.setAttribute('aria-label', 'Ocultar contraseña');
+                if (inputObjetivo.type === 'password') {
+                    inputObjetivo.type = 'text';
+                    icono.classList.remove('bi-eye');
+                    icono.classList.add('bi-eye-slash');
+                    boton.setAttribute('aria-label', 'Ocultar contraseña');
                 } else {
-                    targetInput.type = 'password';
-                    icon.classList.remove('bi-eye-slash');
-                    icon.classList.add('bi-eye');
-                    button.setAttribute('aria-label', 'Mostrar contraseña');
+                    inputObjetivo.type = 'password';
+                    icono.classList.remove('bi-eye-slash');
+                    icono.classList.add('bi-eye');
+                    boton.setAttribute('aria-label', 'Mostrar contraseña');
                 }
             }
         }
         
         /**
-         * Configura el área para arrastrar y soltar archivos.
-         * @param {string} dropAreaId - El ID del elemento del área de soltar.
-         * @param {string} fileInputId - El ID del elemento input de tipo file.
+         * Configura el medidor de fortaleza de contraseña
          */
-        function setupFileDropArea(dropAreaId, fileInputId) {
-            const dropArea = document.getElementById(dropAreaId);
-            const fileInput = document.getElementById(fileInputId);
+        function configurarMedidorFortalezaContrasena() {
+            document.getElementById('passwordInput').addEventListener('input', function() {
+                evaluarFortalezaContrasena(this.value);
+            });
+        }
+        
+        /**
+         * Configura los eventos para el modal de compartir
+         */
+        function configurarModalCompartir() {
+            const modalCompartir = document.getElementById('shareModal');
+            modalCompartir.addEventListener('shown.bs.modal', function () {
+                rellenarModalCompartir();
+            });
+        }
+        
+        /**
+         * =================================================================
+         * FUNCIONES DE MANEJO DE ARCHIVOS
+         * =================================================================
+         */
+        
+        /**
+         * Configura el área para arrastrar y soltar archivos.
+         * @param {string} idAreaSoltar - El ID del elemento del área de soltar.
+         * @param {string} idInputArchivo - El ID del elemento input de tipo file.
+         */
+        function configurarAreaArrastrarSoltar(idAreaSoltar, idInputArchivo) {
+            const areaSoltar = document.getElementById(idAreaSoltar);
+            const inputArchivo = document.getElementById(idInputArchivo);
             
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, e => { 
+            // Prevenir comportamientos por defecto para todos los eventos de arrastre
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(nombreEvento => {
+                areaSoltar.addEventListener(nombreEvento, e => { 
                     e.preventDefault(); 
                     e.stopPropagation(); 
                 }, false);
             });
             
-            ['dragenter', 'dragover'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => dropArea.classList.add('is-active'), false);
+            // Resaltar el área cuando un archivo es arrastrado sobre ella
+            ['dragenter', 'dragover'].forEach(nombreEvento => {
+                areaSoltar.addEventListener(nombreEvento, () => areaSoltar.classList.add('is-active'), false);
             });
             
-            ['dragleave', 'drop'].forEach(eventName => {
-                dropArea.addEventListener(eventName, () => dropArea.classList.remove('is-active'), false);
+            // Quitar el resaltado cuando el archivo sale del área o se suelta
+            ['dragleave', 'drop'].forEach(nombreEvento => {
+                areaSoltar.addEventListener(nombreEvento, () => areaSoltar.classList.remove('is-active'), false);
             });
             
-            dropArea.addEventListener('drop', e => {
+            // Manejar la caída de archivos
+            areaSoltar.addEventListener('drop', e => {
                 const dt = e.dataTransfer;
-                const files = dt.files;
-                handleFiles(files, fileInput, dropArea);
+                const archivos = dt.files;
+                manejarArchivos(archivos, inputArchivo, areaSoltar);
             }, false);
             
-            fileInput.addEventListener('change', function() {
-                handleFiles(this.files, fileInput, dropArea);
+            // Manejar la selección de archivos mediante el input
+            inputArchivo.addEventListener('change', function() {
+                manejarArchivos(this.files, inputArchivo, areaSoltar);
             });
         }
 
-        function handleFiles(files, fileInput, dropArea) {
-            if (files.length > 0) {
-                const file = files[0];
-                if (!file.name.toLowerCase().endsWith('.key')) {
-                    showError('accessErrorKey', 'Por favor, selecciona un archivo con extensión .key');
-                    fileInput.value = '';
+        /**
+         * Procesa los archivos seleccionados o arrastrados
+         * @param {FileList} archivos - Lista de archivos a procesar
+         * @param {HTMLInputElement} inputArchivo - El elemento input file
+         * @param {HTMLElement} areaSoltar - El área de soltar archivos
+         */
+        function manejarArchivos(archivos, inputArchivo, areaSoltar) {
+            if (archivos.length > 0) {
+                const archivo = archivos[0];
+                if (!archivo.name.toLowerCase().endsWith('.key')) {
+                    mostrarError('accessErrorKey', 'Por favor, selecciona un archivo con extensión .key');
+                    inputArchivo.value = '';
                     return;
                 }
-                fileInput.files = files;
-                updateFileDisplay(dropArea, file.name);
+                inputArchivo.files = archivos;
+                actualizarVisualizacionArchivo(areaSoltar, archivo.name);
             }
         }
         
-        function updateFileDisplay(dropArea, fileName) {
-            const fileMsg = dropArea.querySelector('.file-msg');
-            fileMsg.textContent = `Archivo seleccionado: ${fileName}`;
+        /**
+         * Actualiza la visualización del área de archivos con el nombre del archivo seleccionado
+         * @param {HTMLElement} areaSoltar - El área de soltar archivos
+         * @param {string} nombreArchivo - El nombre del archivo seleccionado
+         */
+        function actualizarVisualizacionArchivo(areaSoltar, nombreArchivo) {
+            const mensajeArchivo = areaSoltar.querySelector('.file-msg');
+            mensajeArchivo.textContent = `Archivo seleccionado: ${nombreArchivo}`;
         }
         
-        function showError(elementId, message) {
-            const errorElement = document.getElementById(elementId);
-            errorElement.style.display = 'block';
-            if (message) {
-                errorElement.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>${message}`;
+        /**
+         * =================================================================
+         * FUNCIONES DE UTILIDAD
+         * =================================================================
+         */
+        
+        /**
+         * Muestra un mensaje de error en la interfaz
+         * @param {string} idElementoError - ID del elemento de error a mostrar
+         * @param {string} mensaje - Mensaje de error a mostrar (opcional)
+         */
+        function mostrarError(idElementoError, mensaje) {
+            const elementoError = document.getElementById(idElementoError);
+            elementoError.style.display = 'block';
+            if (mensaje) {
+                elementoError.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2" aria-hidden="true"></i>${mensaje}`;
             }
             
             // Enfocar el elemento de error para accesibilidad
-            errorElement.focus();
-            errorElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            elementoError.focus();
+            elementoError.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         }
         
-        function hideError(elementId) {
-            document.getElementById(elementId).style.display = 'none';
+        /**
+         * Oculta un mensaje de error de la interfaz
+         * @param {string} idElementoError - ID del elemento de error a ocultar
+         */
+        function ocultarError(idElementoError) {
+            document.getElementById(idElementoError).style.display = 'none';
         }
         
-        function toggleLoading(buttonId, spinnerId, loading) {
-            const button = document.getElementById(buttonId);
-            const spinner = document.getElementById(spinnerId);
-            button.disabled = loading;
-            spinner.classList.toggle('d-none', !loading);
+        /**
+         * Alterna el estado de carga (mostrar/ocultar spinner) de un botón
+         * @param {string} idBoton - ID del botón
+         * @param {string} idSpinner - ID del spinner
+         * @param {boolean} cargando - Estado de carga (true = cargando, false = no cargando)
+         */
+        function alternarEstadoCarga(idBoton, idSpinner, cargando) {
+            const boton = document.getElementById(idBoton);
+            const spinner = document.getElementById(idSpinner);
+            boton.disabled = cargando;
+            spinner.classList.toggle('d-none', !cargando);
         }
         
         /**
          * Evalúa la fortaleza de una contraseña y actualiza la UI.
-         * @param {string} password - La contraseña a evaluar.
+         * @param {string} contrasena - La contraseña a evaluar.
          */
-        function checkPasswordStrength(password) {
-            const strengthBar = document.getElementById('passwordStrengthBar');
-            const strengthDiv = document.getElementById('passwordStrength');
-            if (!password) {
-                strengthDiv.style.display = 'none';
+        function evaluarFortalezaContrasena(contrasena) {
+            const barraFortaleza = document.getElementById('passwordStrengthBar');
+            const contenedorFortaleza = document.getElementById('passwordStrength');
+            if (!contrasena) {
+                contenedorFortaleza.style.display = 'none';
                 return;
             }
-            strengthDiv.style.display = 'block';
+            contenedorFortaleza.style.display = 'block';
 
-            let score = 0;
-            if (password.length >= 8) score++;
-            if (password.length >= 12) score++;
-            if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
-            if (/\d/.test(password)) score++;
-            if (/[^A-Za-z0-9]/.test(password)) score++;
+            let puntuacion = 0;
+            // Criterios para evaluar la fortaleza
+            if (contrasena.length >= 8) puntuacion++;
+            if (contrasena.length >= 12) puntuacion++;
+            if (/[a-z]/.test(contrasena) && /[A-Z]/.test(contrasena)) puntuacion++;
+            if (/\d/.test(contrasena)) puntuacion++;
+            if (/[^A-Za-z0-9]/.test(contrasena)) puntuacion++;
 
-            let width = (score / 5) * 100;
-            let strengthClass = 'strength-weak'; // Débil
+            let ancho = (puntuacion / 5) * 100;
+            let claseFortaleza = 'strength-weak'; // Débil
             
-            if (score >= 3) {
-                strengthClass = 'strength-medium'; // Media
+            if (puntuacion >= 3) {
+                claseFortaleza = 'strength-medium'; // Media
             }
-            if (score >= 4) {
-                strengthClass = 'strength-strong'; // Fuerte
+            if (puntuacion >= 4) {
+                claseFortaleza = 'strength-strong'; // Fuerte
             }
 
-            strengthBar.style.width = `${width}%`;
-            strengthBar.className = `strength-bar ${strengthClass}`;
-            strengthBar.setAttribute('aria-valuenow', width);
+            barraFortaleza.style.width = `${ancho}%`;
+            barraFortaleza.className = `strength-bar ${claseFortaleza}`;
+            barraFortaleza.setAttribute('aria-valuenow', ancho);
             
             // Actualizar etiqueta de accesibilidad
-            let strengthLabel = 'Débil';
-            if (score >= 3) strengthLabel = 'Media';
-            if (score >= 4) strengthLabel = 'Fuerte';
-            strengthBar.setAttribute('aria-label', `Fortaleza de contraseña: ${strengthLabel}`);
-        }
-
-        function generateKeyFile() {
-            const keyArray = new Uint8Array(KEY_FILE_SIZE_BYTES);
-            window.crypto.getRandomValues(keyArray);
-            // Cambiado de application/octet-stream a text/plain para compatibilidad con la API de compartir
-            const blob = new Blob([keyArray], { type: 'text/plain' });
-            const timestamp = new Date().getTime();
-            const fileName = `rakurl_key_${timestamp}.key`;
-            
-            appState.generatedKeyFile = { blob, name: fileName, data: keyArray };
-            return appState.generatedKeyFile;
+            let etiquetaFortaleza = 'Débil';
+            if (puntuacion >= 3) etiquetaFortaleza = 'Media';
+            if (puntuacion >= 4) etiquetaFortaleza = 'Fuerte';
+            barraFortaleza.setAttribute('aria-label', `Fortaleza de contraseña: ${etiquetaFortaleza}`);
         }
         
-        function downloadKeyFile() {
-            if (!appState.generatedKeyFile) {
-                showError('protectErrorKey', 'No hay ningún archivo .key para descargar');
+        /**
+         * =================================================================
+         * FUNCIONES DE GENERACIÓN Y MANEJO DE CLAVES
+         * =================================================================
+         */
+        
+        /**
+         * Genera un archivo de clave aleatorio
+         * @returns {Object} Un objeto con el blob, nombre y datos del archivo generado
+         */
+        function generarArchivoClave() {
+            // Crear un array de bytes aleatorios
+            const arrayClave = new Uint8Array(TAMANO_ARCHIVO_CLAVE_BYTES);
+            window.crypto.getRandomValues(arrayClave);
+            
+            // Crear un blob con los datos aleatorios
+            // Usamos 'text/plain' para mejorar la compatibilidad con la API de compartir
+            const blob = new Blob([arrayClave], { type: 'text/plain' });
+            
+            // Generar un nombre único para el archivo
+            const marcaTiempo = new Date().getTime();
+            const nombreArchivo = `rakurl_key_${marcaTiempo}.key`;
+            
+            // Almacenar el archivo generado en el estado de la aplicación
+            estadoAplicacion.archivoClaveGenerado = { 
+                blob, 
+                nombre: nombreArchivo, 
+                datos: arrayClave 
+            };
+            
+            return estadoAplicacion.archivoClaveGenerado;
+        }
+        
+        /**
+         * Descarga el archivo de clave generado (solo visible en escritorio)
+         */
+        function descargarArchivoClave() {
+            if (!estadoAplicacion.archivoClaveGenerado) {
+                mostrarError('protectErrorKey', 'No hay ningún archivo .key para descargar');
                 return;
             }
             
-            const url = URL.createObjectURL(appState.generatedKeyFile.blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = appState.generatedKeyFile.name;
-            a.rel = 'noopener';
-            document.body.appendChild(a);
-            a.click();
+            // Crear una URL temporal para el blob
+            const urlTemporal = URL.createObjectURL(estadoAplicacion.archivoClaveGenerado.blob);
+            
+            // Crear un enlace temporal para iniciar la descarga
+            const enlaceTemporal = document.createElement('a');
+            enlaceTemporal.href = urlTemporal;
+            enlaceTemporal.download = estadoAplicacion.archivoClaveGenerado.nombre;
+            enlaceTemporal.rel = 'noopener';
+            
+            // Añadir el enlace al DOM, hacer clic y luego eliminarlo
+            document.body.appendChild(enlaceTemporal);
+            enlaceTemporal.click();
             setTimeout(() => {
-                document.body.removeChild(a);
-                URL.revokeObjectURL(url);
+                document.body.removeChild(enlaceTemporal);
+                URL.revokeObjectURL(urlTemporal);
             }, 100);
         }
         
         /**
-         * Comparte el archivo .key usando la API nativa si está disponible, 
-         * o muestra un mensaje de error si no es posible.
+         * Comparte el archivo .key usando la API nativa si está disponible.
+         * Renombra el archivo a .txt al momento de compartir para máxima compatibilidad.
+         * Solo visible en dispositivos móviles.
          */
-        async function shareKeyFile() {
-                const shareBtn = document.getElementById('shareKeyBtn');
-                const originalBtnHTML = shareBtn.innerHTML; // Usamos innerHTML para guardar el icono y el texto
+        async function compartirArchivoClave() {
+            const botonCompartir = document.getElementById('shareKeyBtn');
+            const contenidoOriginalBoton = botonCompartir.innerHTML; // Guardamos el contenido original del botón
             
-                if (!appState.generatedKeyFile) {
-                    showError('protectErrorKey', 'No hay ningún archivo .key para compartir');
-                    return;
+            if (!estadoAplicacion.archivoClaveGenerado) {
+                mostrarError('protectErrorKey', 'No hay ningún archivo .key para compartir');
+                return;
+            }
+            
+            // Mostrar indicador de carga
+            botonCompartir.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Compartiendo...';
+            botonCompartir.disabled = true;
+            
+            try {
+                const mensajeCompartir = "RAKURL Security: Este es tu archivo de clave de acceso. ¡Guárdalo en un lugar seguro!";
+
+                // --- INICIO DE LA CORRECCIÓN PARA COMPATIBILIDAD ---
+                
+                // 1. Cambiamos el nombre del archivo para que termine en .txt
+                const nombreOriginal = estadoAplicacion.archivoClaveGenerado.nombre;
+                const nombreParaCompartir = nombreOriginal.replace('.key', '.txt');
+
+                // 2. Creamos un nuevo objeto File con el nombre .txt y el tipo text/plain
+                const archivoParaCompartir = new File(
+                    [estadoAplicacion.archivoClaveGenerado.blob], 
+                    nombreParaCompartir, 
+                    { type: 'text/plain' }
+                );
+
+                // --- FIN DE LA CORRECCIÓN ---
+                
+                // Comprobamos si se puede compartir el nuevo archivo
+                if (navigator.share && navigator.canShare({ files: [archivoParaCompartir] })) {
+                    await navigator.share({
+                        title: 'RAKURL Security - Archivo de Clave',
+                        text: mensajeCompartir,
+                        files: [archivoParaCompartir] // Usamos el nuevo archivo con la extensión .txt
+                    });
+                } else {
+                    mostrarError('protectErrorKey', 'Tu navegador no es compatible con la función de compartir archivos. Por favor, descarga el archivo y compártelo manualmente.');
                 }
-            
-                shareBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Compartiendo...';
-                shareBtn.disabled = true;
-            
-                try {
-                    const shareMessage = "RAKURL Security: Este es tu archivo de clave de acceso. ¡Guárdalo en un lugar seguro!";                       
-                    const originalName = appState.generatedKeyFile.name;
-                    const shareName = originalName.replace('.key', '.txt');
-                    const fileToShare = new File([appState.generatedKeyFile.blob], shareName, { type: 'text/plain' });
-                    // Comprobamos si se puede compartir el nuevo archivo 'fileToShare'
-                    if (navigator.share && navigator.canShare({ files: [fileToShare] })) {
-                        await navigator.share({
-                            title: 'RAKURL Security - Archivo de Clave',
-                            text: shareMessage,
-                            files: [fileToShare] // Usamos el nuevo archivo con la extensión .txt
-                        });
-                    } else {
-                        showError('protectErrorKey', 'Tu navegador no es compatible con la función de compartir archivos. Por favor, descarga el archivo y compártelo manualmente.');
-                    }
-                } catch (error) {
-                    console.error('Error al compartir:', error);
-                    if (error.name !== 'AbortError') { // Ignorar si el usuario cancela la acción
-                        showError('protectErrorKey', 'No se pudo compartir el archivo .key.');
-                    }
-                } finally {
-                    shareBtn.innerHTML = originalBtnHTML;
-                    shareBtn.disabled = false;
+            } catch (error) {
+                console.error('Error al compartir:', error);
+                // Ignoramos el error si el usuario cancela la acción
+                if (error.name !== 'AbortError') { 
+                    mostrarError('protectErrorKey', 'No se pudo compartir el archivo .key.');
                 }
+            } finally {
+                // Restaurar el estado original del botón
+                botonCompartir.innerHTML = contenidoOriginalBoton;
+                botonCompartir.disabled = false;
             }
         }
         
         /**
          * Deriva una clave criptográfica a partir del contenido de un archivo usando SHA-256.
-         * @param {File} file - El archivo .key seleccionado.
+         * @param {File} archivo - El archivo .key seleccionado.
          * @returns {Promise<string>} Una promesa que se resuelve con la clave en formato hexadecimal.
          */
-        async function getFileAsKey(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = event => resolve(getDataAsKey(event.target.result));
-                reader.onerror = () => reject(new Error('Error al leer el archivo'));
-                reader.readAsArrayBuffer(file);
+        async function obtenerClaveDesdeArchivo(archivo) {
+            return new Promise((resolver, rechazar) => {
+                const lector = new FileReader();
+                lector.onload = evento => resolver(obtenerClaveDesdeDatos(evento.target.result));
+                lector.onerror = () => rechazar(new Error('Error al leer el archivo'));
+                lector.readAsArrayBuffer(archivo);
             });
         }
         
         /**
          * Deriva una clave criptográfica a partir de datos binarios usando SHA-256.
-         * @param {ArrayBuffer} data - Los datos binarios del archivo.
+         * @param {ArrayBuffer} datos - Los datos binarios del archivo.
          * @returns {string} La clave en formato hexadecimal.
          */
-        function getDataAsKey(data) {
-            const wordArray = CryptoJS.lib.WordArray.create(data);
+        function obtenerClaveDesdeDatos(datos) {
+            const wordArray = CryptoJS.lib.WordArray.create(datos);
             const hash = CryptoJS.SHA256(wordArray);
             return hash.toString(CryptoJS.enc.Hex);
         }
         
         /**
          * Deriva una clave criptográfica a partir de una contraseña y un salt usando PBKDF2.
-         * @param {string} password - La contraseña del usuario.
+         * @param {string} contrasena - La contraseña del usuario.
          * @param {CryptoJS.lib.WordArray} salt - El salt aleatorio.
          * @returns {string} La clave derivada en formato hexadecimal.
          */
-        function deriveKeyFromPassword(password, salt) {
-            return CryptoJS.PBKDF2(password, salt, {
+        function derivarClaveDesdeContrasena(contrasena, salt) {
+            return CryptoJS.PBKDF2(contrasena, salt, {
                 keySize: 256 / 32,
-                iterations: PBKDF2_ITERATIONS
+                iterations: ITERACIONES_PBKDF2
             }).toString(CryptoJS.enc.Hex);
         }
         
         /**
+         * =================================================================
+         * FUNCIONES DE CIFRADO Y DESCIFRADO
+         * =================================================================
+         */
+        
+        /**
          * Cifra una URL usando AES-256-CBC.
          * @param {string} url - La URL a cifrar.
-         * @param {string} key - La clave de cifrado en formato hexadecimal.
+         * @param {string} clave - La clave de cifrado en formato hexadecimal.
          * @returns {string} El texto cifrado (IV + ciphertext) codificado en Base64 URL-safe.
          */
-        function encryptUrl(url, key) {
-            const keyWordArray = CryptoJS.enc.Hex.parse(key);
-            const iv = CryptoJS.lib.WordArray.random(16);
-            const encrypted = CryptoJS.AES.encrypt(url, keyWordArray, { iv: iv });
-            const combined = iv.clone().concat(encrypted.ciphertext);
-            let base64 = combined.toString(CryptoJS.enc.Base64);
+        function cifrarUrl(url, clave) {
+            const claveWordArray = CryptoJS.enc.Hex.parse(clave);
+            const iv = CryptoJS.lib.WordArray.random(16); // Vector de inicialización aleatorio
+            const cifrado = CryptoJS.AES.encrypt(url, claveWordArray, { iv: iv });
+            const combinado = iv.clone().concat(cifrado.ciphertext);
+            let base64 = combinado.toString(CryptoJS.enc.Base64);
+            // Convertir a Base64 URL-safe (reemplazar caracteres no seguros en URLs)
             return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
         }
         
         /**
          * Descifra datos cifrados con AES-256-CBC.
-         * @param {string} encryptedData - Los datos en Base64 URL-safe.
-         * @param {string} key - La clave de descifrado en formato hexadecimal.
+         * @param {string} datosCifrados - Los datos en Base64 URL-safe.
+         * @param {string} clave - La clave de descifrado en formato hexadecimal.
          * @returns {string|null} La URL original o null si hay un error.
          */
-        function decryptUrl(encryptedData, key) {
+        function descifrarUrl(datosCifrados, clave) {
             try {
-                const keyWordArray = CryptoJS.enc.Hex.parse(key);
-                let base64 = encryptedData.replace(/-/g, '+').replace(/_/g, '/');
+                const claveWordArray = CryptoJS.enc.Hex.parse(clave);
+                // Convertir de Base64 URL-safe a Base64 estándar
+                let base64 = datosCifrados.replace(/-/g, '+').replace(/_/g, '/');
                 while (base64.length % 4) { base64 += '='; }
                 
-                const combined = CryptoJS.enc.Base64.parse(base64);
-                const iv = CryptoJS.lib.WordArray.create(combined.words.slice(0, 4));
-                const ciphertext = CryptoJS.lib.WordArray.create(combined.words.slice(4));
+                const combinado = CryptoJS.enc.Base64.parse(base64);
+                // Extraer el IV (primeros 16 bytes)
+                const iv = CryptoJS.lib.WordArray.create(combinado.words.slice(0, 4));
+                // Extraer el ciphertext (el resto)
+                const ciphertext = CryptoJS.lib.WordArray.create(combinado.words.slice(4));
                 
-                const decrypted = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, keyWordArray, { iv: iv });
-                return decrypted.toString(CryptoJS.enc.Utf8);
+                const descifrado = CryptoJS.AES.decrypt({ ciphertext: ciphertext }, claveWordArray, { iv: iv });
+                return descifrado.toString(CryptoJS.enc.Utf8);
             } catch (error) {
                 console.error('Error descifrando:', error);
                 return null;
@@ -1552,24 +1796,30 @@
         /**
          * Crea el payload JSON que se incluirá en el hash de la URL.
          * @param {string|null} salt - El salt en Base64 o null.
-         * @param {string} encrypted - El texto cifrado en Base64 URL-safe.
+         * @param {string} cifrado - El texto cifrado en Base64 URL-safe.
          * @returns {string} El payload completo codificado en Base64 URL-safe.
          */
-        function createPayload(salt, encrypted) {
-            const payload = { v: PAYLOAD_VERSION, s: salt, c: encrypted };
+        function crearPayload(salt, cifrado) {
+            const payload = { 
+                v: VERSION_PAYLOAD,  // Versión del formato
+                s: salt,             // Salt (solo para método de contraseña)
+                c: cifrado           // Contenido cifrado
+            };
             const jsonString = JSON.stringify(payload);
-            let base64 = btoa(jsonString); // btoa funciona bien para UTF-8 básico
+            let base64 = btoa(jsonString); // Codificar a Base64
+            // Convertir a Base64 URL-safe
             return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
         }
         
         /**
          * Parsea el payload JSON del hash de la URL.
-         * @param {string} payloadB64 - El payload en Base64 URL-safe.
+         * @param {string} payloadBase64 - El payload en Base64 URL-safe.
          * @returns {object|null} El objeto de payload o null si hay un error.
          */
-        function parsePayload(payloadB64) {
+        function parsearPayload(payloadBase64) {
             try {
-                let base64 = payloadB64.replace(/-/g, '+').replace(/_/g, '/');
+                // Convertir de Base64 URL-safe a Base64 estándar
+                let base64 = payloadBase64.replace(/-/g, '+').replace(/_/g, '/');
                 while (base64.length % 4) { base64 += '='; }
                 const jsonString = atob(base64);
                 return JSON.parse(jsonString);
@@ -1580,26 +1830,32 @@
         }
         
         /**
+         * =================================================================
+         * FUNCIONES DE MANEJO DE CÓDIGO QR
+         * =================================================================
+         */
+        
+        /**
          * Convierte el código QR a una imagen en formato Data URL.
-         * @param {HTMLElement} qrContainer - El contenedor del código QR.
+         * @param {HTMLElement} contenedorQR - El contenedor del código QR.
          * @returns {Promise<string>} Una promesa que se resuelve con la imagen en formato Data URL.
          */
-        function qrCodeToImage(qrContainer) {
-            return new Promise((resolve, reject) => {
+        function convertirQRaImagen(contenedorQR) {
+            return new Promise((resolver, rechazar) => {
                 try {
                     // Obtener el canvas del código QR
-                    const canvas = qrContainer.querySelector('canvas');
+                    const canvas = contenedorQR.querySelector('canvas');
                     if (!canvas) {
-                        reject(new Error('No se encontró el canvas del código QR'));
+                        rechazar(new Error('No se encontró el canvas del código QR'));
                         return;
                     }
                     
                     // Convertir el canvas a Data URL
                     const dataUrl = canvas.toDataURL('image/png');
-                    resolve(dataUrl);
+                    resolver(dataUrl);
                 } catch (error) {
                     console.error('Error al convertir QR a imagen:', error);
-                    reject(error);
+                    rechazar(error);
                 }
             });
         }
@@ -1607,78 +1863,78 @@
         /**
          * Rellena el modal de compartir con los datos necesarios
          */
-        function populateShareModal() {
+        function rellenarModalCompartir() {
             // Obtener el payload (código cifrado) del textarea
             const payload = document.getElementById('protectedUrlDisplay').value;
-            const qrImage = appState.qrCodeImage;
+            const imagenQR = estadoAplicacion.imagenCodigoQR;
             
-            if (!payload || !qrImage) return;
+            if (!payload || !imagenQR) return;
             
             // Mensaje personalizado para compartir
-            const shareMessage = "RAKURL Security: Este es tu Código de acceso:";
-            const fullMessage = `${shareMessage}\n\n${payload}`;
+            const mensajeCompartir = "RAKURL Security: Este es tu Código de acceso:";
+            const mensajeCompleto = `${mensajeCompartir}\n\n${payload}`;
             
             // Configurar la imagen del QR en el modal
-            const modalQrImage = document.getElementById('modalQrImage');
-            modalQrImage.src = qrImage;
+            const imagenModalQR = document.getElementById('modalQrImage');
+            imagenModalQR.src = imagenQR;
             
             // Configurar botón de WhatsApp
-            const whatsappBtn = document.getElementById('shareWhatsapp');
-            const whatsappText = encodeURIComponent(fullMessage);
-            whatsappBtn.href = `https://wa.me/?text=${whatsappText}`;
+            const botonWhatsapp = document.getElementById('shareWhatsapp');
+            const textoWhatsapp = encodeURIComponent(mensajeCompleto);
+            botonWhatsapp.href = `https://wa.me/?text=${textoWhatsapp}`;
             
             // Configurar botón de Telegram
-            const telegramBtn = document.getElementById('shareTelegram');
-            const telegramText = encodeURIComponent(fullMessage);
-            telegramBtn.href = `https://t.me/share/url?url=${encodeURIComponent(payload)}&text=${telegramText}`;
+            const botonTelegram = document.getElementById('shareTelegram');
+            const textoTelegram = encodeURIComponent(mensajeCompleto);
+            botonTelegram.href = `https://t.me/share/url?url=${encodeURIComponent(payload)}&text=${textoTelegram}`;
             
             // Configurar botón de Messenger
-            const messengerBtn = document.getElementById('shareMessenger');
-            messengerBtn.href = `https://www.facebook.com/dialog/send?link=${encodeURIComponent(payload)}&quote=${encodeURIComponent(shareMessage)}&redirect_uri=${encodeURIComponent(window.location.href)}`;
+            const botonMessenger = document.getElementById('shareMessenger');
+            botonMessenger.href = `https://www.facebook.com/dialog/send?link=${encodeURIComponent(payload)}&quote=${encodeURIComponent(mensajeCompartir)}&redirect_uri=${encodeURIComponent(window.location.href)}`;
             
             // Configurar botón de X (Twitter)
-            const xBtn = document.getElementById('shareX');
-            const xText = encodeURIComponent(fullMessage);
-            xBtn.href = `https://twitter.com/intent/tweet?text=${xText}`;
+            const botonX = document.getElementById('shareX');
+            const textoX = encodeURIComponent(mensajeCompleto);
+            botonX.href = `https://twitter.com/intent/tweet?text=${textoX}`;
             
             // Configurar botón de Instagram
-            const instagramBtn = document.getElementById('shareInstagram');
+            const botonInstagram = document.getElementById('shareInstagram');
             // Instagram no permite compartir enlaces directamente, así que abrimos la app
-            instagramBtn.href = `https://www.instagram.com/`;
-            instagramBtn.onclick = function(e) {
+            botonInstagram.href = `https://www.instagram.com/`;
+            botonInstagram.onclick = function(e) {
                 e.preventDefault();
                 alert('Para compartir en Instagram, por favor descarga la imagen del código QR y súbelo a tus historias o publicaciones.');
             };
             
             // Configurar botón de descarga
-            const downloadBtn = document.getElementById('downloadQr');
-            downloadBtn.href = qrImage;
+            const botonDescargar = document.getElementById('downloadQr');
+            botonDescargar.href = imagenQR;
             
             // Configurar botón de compartir nativo
-            const nativeShareBtn = document.getElementById('nativeShare');
-            nativeShareBtn.onclick = async function(e) {
+            const botonCompartirNativo = document.getElementById('nativeShare');
+            botonCompartirNativo.onclick = async function(e) {
                 e.preventDefault();
                 
                 try {
                     // Convertir Data URL a Blob
-                    const response = await fetch(qrImage);
-                    const blob = await response.blob();
-                    const file = new File([blob], 'rakurl_qr.png', { type: 'image/png' });
+                    const respuesta = await fetch(imagenQR);
+                    const blob = await respuesta.blob();
+                    const archivo = new File([blob], 'rakurl_qr.png', { type: 'image/png' });
                     
                     // Compartir el archivo y el texto
-                    if (navigator.share && navigator.canShare({ files: [file], text: fullMessage })) {
+                    if (navigator.share && navigator.canShare({ files: [archivo], text: mensajeCompleto })) {
                         await navigator.share({
                             title: 'RAKURL Security - Código de Acceso',
-                            text: fullMessage,
-                            files: [file]
+                            text: mensajeCompleto,
+                            files: [archivo]
                         });
                     } else {
                         // Fallback: descargar la imagen
-                        downloadQRImage(qrImage);
+                        descargarImagenQR(imagenQR);
                     }
                 } catch (error) {
                     console.error('Error al compartir:', error);
-                    downloadQRImage(qrImage);
+                    descargarImagenQR(imagenQR);
                 }
             };
         }
@@ -1687,54 +1943,59 @@
          * Comparte el código QR usando la API nativa si está disponible, 
          * o abre el modal como alternativa.
          */
-        async function shareQRCode() {
-            const qrContainer = document.getElementById('qrcode');
-            const shareBtn = document.getElementById('shareQrBtn');
-            const originalBtnText = shareBtn.innerHTML;
-            const realUrl = document.getElementById('protectedUrl').value;
+        async function compartirCodigoQR() {
+            const contenedorQR = document.getElementById('qrcode');
+            const botonCompartir = document.getElementById('shareQrBtn');
+            const contenidoOriginalBoton = botonCompartir.innerHTML;
+            const urlReal = document.getElementById('protectedUrl').value;
             const payload = document.getElementById('protectedUrlDisplay').value;
 
-            shareBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
-            shareBtn.disabled = true;
+            // Mostrar indicador de carga
+            botonCompartir.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Procesando...';
+            botonCompartir.disabled = true;
 
             try {
-                const qrImage = await qrCodeToImage(qrContainer);
-                appState.qrCodeImage = qrImage;
+                // Convertir el código QR a imagen
+                const imagenQR = await convertirQRaImagen(contenedorQR);
+                estadoAplicacion.imagenCodigoQR = imagenQR;
 
-                const response = await fetch(qrImage);
-                const blob = await response.blob();
-                const file = new File([blob], 'rakurl_qr.png', { type: 'image/png' });
+                // Convertir la imagen a un Blob para compartir
+                const respuesta = await fetch(imagenQR);
+                const blob = await respuesta.blob();
+                const archivo = new File([blob], 'rakurl_qr.png', { type: 'image/png' });
 
                 // Mensaje personalizado para compartir
-                const shareMessage = "RAKURL Security: Este es tu Código de acceso:";
-                const fullMessage = `${shareMessage}\n\n${payload}`;
+                const mensajeCompartir = "RAKURL Security: Este es tu Código de acceso:";
+                const mensajeCompleto = `${mensajeCompartir}\n\n${payload}`;
 
                 // Comprobar si se puede usar la API nativa para compartir archivos
-                if (navigator.share && navigator.canShare({ files: [file] })) {
-                    // Opción 1: Usar la API nativa (la que funciona)
+                if (navigator.share && navigator.canShare({ files: [archivo] })) {
+                    // Usar la API nativa si está disponible
                     await navigator.share({
                         title: 'RAKURL Security - Código de Acceso',
-                        text: fullMessage,
-                        files: [file]
+                        text: mensajeCompleto,
+                        files: [archivo]
                     });
                 } else {
-                    // Opción 2: El navegador no es compatible, abrir el modal como alternativa
-                    populateShareModal(); // Rellenamos el modal con los datos
-                    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-                    shareModal.show();
+                    // Si no está disponible, abrir el modal como alternativa
+                    rellenarModalCompartir();
+                    const modalCompartir = new bootstrap.Modal(document.getElementById('shareModal'));
+                    modalCompartir.show();
                 }
 
             } catch (error) {
                 console.error('Error al compartir:', error);
-                if (error.name !== 'AbortError') { // Ignorar si el usuario cancela la acción
+                // Ignoramos el error si el usuario cancela la acción
+                if (error.name !== 'AbortError') { 
                     // Si hay un error con la API nativa, mostrar el modal como fallback
-                    populateShareModal();
-                    const shareModal = new bootstrap.Modal(document.getElementById('shareModal'));
-                    shareModal.show();
+                    rellenarModalCompartir();
+                    const modalCompartir = new bootstrap.Modal(document.getElementById('shareModal'));
+                    modalCompartir.show();
                 }
             } finally {
-                shareBtn.innerHTML = originalBtnText;
-                shareBtn.disabled = false;
+                // Restaurar el estado original del botón
+                botonCompartir.innerHTML = contenidoOriginalBoton;
+                botonCompartir.disabled = false;
             }
         }
         
@@ -1742,242 +2003,269 @@
          * Descarga la imagen del código QR.
          * @param {string} dataUrl - La imagen en formato Data URL.
          */
-        function downloadQRImage(dataUrl) {
+        function descargarImagenQR(dataUrl) {
             try {
-                const a = document.createElement('a');
-                a.href = dataUrl;
-                a.download = `rakurl_qr_${new Date().getTime()}.png`;
-                a.rel = 'noopener';
-                document.body.appendChild(a);
-                a.click();
+                const enlaceTemporal = document.createElement('a');
+                enlaceTemporal.href = dataUrl;
+                enlaceTemporal.download = `rakurl_qr_${new Date().getTime()}.png`;
+                enlaceTemporal.rel = 'noopener';
+                document.body.appendChild(enlaceTemporal);
+                enlaceTemporal.click();
                 setTimeout(() => {
-                    document.body.removeChild(a);
+                    document.body.removeChild(enlaceTemporal);
                 }, 100);
                 
                 // Mostrar mensaje de éxito
-                const successMessage = document.createElement('div');
-                successMessage.className = 'success-message';
-                successMessage.innerHTML = '<i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>La imagen del código QR ha sido descargada correctamente.';
-                successMessage.style.display = 'block';
+                const mensajeExito = document.createElement('div');
+                mensajeExito.className = 'success-message';
+                mensajeExito.innerHTML = '<i class="bi bi-check-circle-fill me-2" aria-hidden="true"></i>La imagen del código QR ha sido descargada correctamente.';
+                mensajeExito.style.display = 'block';
                 
                 // Insertar después del botón de compartir
-                const shareBtn = document.getElementById('shareQrBtn');
-                shareBtn.parentNode.insertBefore(successMessage, shareBtn.nextSibling);
+                const botonCompartir = document.getElementById('shareQrBtn');
+                botonCompartir.parentNode.insertBefore(mensajeExito, botonCompartir.nextSibling);
                 
                 // Ocultar después de 3 segundos
                 setTimeout(() => {
-                    successMessage.style.display = 'none';
+                    mensajeExito.style.display = 'none';
                     setTimeout(() => {
-                        if (successMessage.parentNode) {
-                            successMessage.parentNode.removeChild(successMessage);
+                        if (mensajeExito.parentNode) {
+                            mensajeExito.parentNode.removeChild(mensajeExito);
                         }
                     }, 500);
                 }, 3000);
             } catch (error) {
                 console.error('Error al descargar la imagen:', error);
-                showError('protectErrorKey', 'No se pudo descargar la imagen del código QR.');
+                mostrarError('protectErrorKey', 'No se pudo descargar la imagen del código QR.');
             }
         }
         
         /**
+         * =================================================================
+         * FUNCIONES PRINCIPALES DE LA APLICACIÓN
+         * =================================================================
+         */
+        
+        /**
          * Lógica principal para proteger una URL.
          */
-        async function protectUrl() {
-            const urlInput = document.getElementById('urlInput');
-            const resultContainer = document.getElementById('protectResult');
-            const passwordInput = document.getElementById('passwordInput');
-            const keyMethod = document.getElementById('keyMethod').checked;
-            const qrcodeContainer = document.getElementById('qrcode');
+        async function protegerUrl() {
+            const inputUrl = document.getElementById('urlInput');
+            const contenedorResultados = document.getElementById('protectResult');
+            const inputContrasena = document.getElementById('passwordInput');
+            const usaMetodoClave = document.getElementById('keyMethod').checked;
+            const contenedorQR = document.getElementById('qrcode');
             
             // Validar URL
-            if (!urlInput.value || !isValidUrl(urlInput.value)) {
-                urlInput.classList.add('is-invalid');
-                showError('protectErrorUrl', 'La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.');
+            if (!inputUrl.value || !esUrlValida(inputUrl.value)) {
+                inputUrl.classList.add('is-invalid');
+                mostrarError('protectErrorUrl', 'La URL ingresada no es válida. Por favor, verifica e intenta nuevamente.');
                 return;
             } else {
-                urlInput.classList.remove('is-invalid');
+                inputUrl.classList.remove('is-invalid');
             }
             
             // Resetear UI
-            resultContainer.style.display = 'none';
-            qrcodeContainer.style.display = 'none';
-            qrcodeContainer.innerHTML = '';
-            hideError('protectErrorUrl');
-            hideError('protectErrorKey');
+            contenedorResultados.style.display = 'none';
+            contenedorQR.style.display = 'none';
+            contenedorQR.innerHTML = '';
+            ocultarError('protectErrorUrl');
+            ocultarError('protectErrorKey');
             document.getElementById('protectSuccess').style.display = 'none';
             document.getElementById('keyInfo').style.display = 'none';
             
-            toggleLoading('protectBtn', 'protectBtnSpinner', true);
+            // Mostrar indicador de carga
+            alternarEstadoCarga('protectBtn', 'protectBtnSpinner', true);
 
             // Usamos un timeout para permitir que la UI se actualice antes de la operación de cifrado
             setTimeout(async () => {
                 try {
-                    let key, salt = null;
-                    if (keyMethod) {
-                        const keyFile = generateKeyFile();
-                        key = getDataAsKey(keyFile.data);
+                    let clave, salt = null;
+                    
+                    if (usaMetodoClave) {
+                        // Método de archivo .key
+                        const archivoClave = generarArchivoClave();
+                        clave = obtenerClaveDesdeDatos(archivoClave.datos);
                     } else {
-                        if (!passwordInput.value) {
-                            showError('protectErrorKey', 'Por favor, ingresa una contraseña para proteger el enlace.');
-                            toggleLoading('protectBtn', 'protectBtnSpinner', false);
+                        // Método de contraseña
+                        if (!inputContrasena.value) {
+                            mostrarError('protectErrorKey', 'Por favor, ingresa una contraseña para proteger el enlace.');
+                            alternarEstadoCarga('protectBtn', 'protectBtnSpinner', false);
                             return;
                         }
                         const saltWordArray = CryptoJS.lib.WordArray.random(16);
                         salt = saltWordArray.toString(CryptoJS.enc.Base64);
-                        key = deriveKeyFromPassword(passwordInput.value, saltWordArray);
+                        clave = derivarClaveDesdeContrasena(inputContrasena.value, saltWordArray);
                     }
                     
-                    const encrypted = encryptUrl(urlInput.value, key);
-                    const payload = createPayload(salt, encrypted);
-                    const realUrl = `${appState.baseUrl}#${payload}`;
+                    // Cifrar la URL con la clave generada
+                    const urlCifrada = cifrarUrl(inputUrl.value, clave);
+                    
+                    // Crear el payload con los datos necesarios
+                    const payload = crearPayload(salt, urlCifrada);
+                    const urlCompleta = `${estadoAplicacion.urlBase}#${payload}`;
                     
                     // Almacenar la URL real en el campo oculto
-                    document.getElementById('protectedUrl').value = realUrl;
+                    document.getElementById('protectedUrl').value = urlCompleta;
                     
                     // Mostrar solo el payload (código encriptado) en el textarea visible
                     document.getElementById('protectedUrlDisplay').value = payload;
                     
-                    resultContainer.style.display = 'block';
-                    resultContainer.classList.add('result-animation');
+                    // Mostrar resultados
+                    contenedorResultados.style.display = 'block';
+                    contenedorResultados.classList.add('result-animation');
                     document.getElementById('protectSuccess').style.display = 'block';
 
                     // Generar código QR con la URL completa que incluye el payload
-                    new QRCode(qrcodeContainer, {
-                        text: realUrl,
+                    new QRCode(contenedorQR, {
+                        text: urlCompleta,
                         width: 200,
                         height: 200,
                         correctLevel : QRCode.CorrectLevel.H,
                         colorDark: '#000000',
                         colorLight: '#ffffff'
                     });
-                    qrcodeContainer.style.display = 'block';
+                    contenedorQR.style.display = 'block';
                     
-                    if (keyMethod) {
+                    // Si se usó el método de archivo .key, mostrar información del archivo
+                    if (usaMetodoClave) {
                         document.getElementById('keyInfo').style.display = 'block';
                     }
                 } catch (error) {
                     console.error('Error al proteger la URL:', error);
-                    showError('protectErrorKey', 'Ocurrió un error al proteger la URL. Por favor, intenta nuevamente.');
+                    mostrarError('protectErrorKey', 'Ocurrió un error al proteger la URL. Por favor, intenta nuevamente.');
                 } finally {
-                    toggleLoading('protectBtn', 'protectBtnSpinner', false);
+                    alternarEstadoCarga('protectBtn', 'protectBtnSpinner', false);
                 }
-            }, 50); // 50ms de espera
+            }, 50); // 50ms de espera para que la UI se actualice
         }
         
         /**
          * Lógica principal para acceder a una URL protegida.
          */
-        async function accessUrl() {
-            const protectedUrlInput = document.getElementById('protectedUrlInput');
-            const keyFileInput = document.getElementById('keyFileInputAccess');
-            const accessPasswordInput = document.getElementById('accessPasswordInput');
-            const resultContainer = document.getElementById('accessResult');
-            const keyAccessMethod = document.getElementById('keyAccessMethod').checked;
+        async function accederUrl() {
+            const inputUrlProtegida = document.getElementById('protectedUrlInput');
+            const inputArchivoClave = document.getElementById('keyFileInputAccess');
+            const inputContrasenaAcceso = document.getElementById('accessPasswordInput');
+            const contenedorResultados = document.getElementById('accessResult');
+            const usaMetodoClave = document.getElementById('keyAccessMethod').checked;
             
             // Resetear UI
-            resultContainer.style.display = 'none';
-            ['accessErrorUrl', 'accessErrorKey', 'accessErrorMethodKey', 'accessErrorMethodFile'].forEach(hideError);
+            contenedorResultados.style.display = 'none';
+            ['accessErrorUrl', 'accessErrorKey', 'accessErrorMethodKey', 'accessErrorMethodFile'].forEach(ocultarError);
             document.getElementById('accessSuccess').style.display = 'none';
             
-            if (!protectedUrlInput.value) {
-                showError('accessErrorUrl', 'Por favor, pega el código de acceso.');
+            if (!inputUrlProtegida.value) {
+                mostrarError('accessErrorUrl', 'Por favor, pega el código de acceso.');
                 return;
             }
             
-            toggleLoading('accessBtn', 'accessBtnSpinner', true);
+            // Mostrar indicador de carga
+            alternarEstadoCarga('accessBtn', 'accessBtnSpinner', true);
 
             setTimeout(async () => {
                 try {
-                    let payloadB64 = protectedUrlInput.value;
+                    let payloadBase64 = inputUrlProtegida.value;
                     
                     // Si el usuario pegó una URL completa, extraemos el payload
-                    if (payloadB64.includes('#')) {
-                        payloadB64 = payloadB64.split('#')[1];
+                    if (payloadBase64.includes('#')) {
+                        payloadBase64 = payloadBase64.split('#')[1];
                     }
                     
-                    if (!payloadB64) {
-                        showError('accessErrorUrl', 'El código no contiene datos válidos.');
+                    if (!payloadBase64) {
+                        mostrarError('accessErrorUrl', 'El código no contiene datos válidos.');
                         return;
                     }
                     
-                    const parsedPayload = parsePayload(payloadB64);
-                    if (!parsedPayload || parsedPayload.v !== PAYLOAD_VERSION) {
-                        showError('accessErrorUrl', 'El formato del código es inválido o incompatible.');
+                    // Parsear el payload para obtener los datos necesarios
+                    const payloadParseado = parsearPayload(payloadBase64);
+                    if (!payloadParseado || payloadParseado.v !== VERSION_PAYLOAD) {
+                        mostrarError('accessErrorUrl', 'El formato del código es inválido o incompatible.');
                         return;
                     }
 
-                    const { s: salt, c: encrypted } = parsedPayload;
+                    const { s: salt, c: cifrado } = payloadParseado;
                     
-                    if (keyAccessMethod && salt) {
-                        showError('accessErrorMethodKey', 'Este enlace fue protegido con una contraseña. Por favor, cambia el método de acceso.');
+                    // Verificar que el método de acceso coincida con el método de protección
+                    if (usaMetodoClave && salt) {
+                        mostrarError('accessErrorMethodKey', 'Este enlace fue protegido con una contraseña. Por favor, cambia el método de acceso.');
                         return;
                     }
-                    if (!keyAccessMethod && !salt) {
-                        showError('accessErrorMethodFile', 'Este enlace fue protegido con un archivo .key. Por favor, cambia el método de acceso.');
+                    if (!usaMetodoClave && !salt) {
+                        mostrarError('accessErrorMethodFile', 'Este enlace fue protegido con un archivo .key. Por favor, cambia el método de acceso.');
                         return;
                     }
 
-                    let key;
-                    if (keyAccessMethod) {
-                        if (!keyFileInput.files || keyFileInput.files.length === 0) {
-                            showError('accessErrorKey', 'Por favor, selecciona el archivo .key.');
+                    let clave;
+                    if (usaMetodoClave) {
+                        // Método de archivo .key
+                        if (!inputArchivoClave.files || inputArchivoClave.files.length === 0) {
+                            mostrarError('accessErrorKey', 'Por favor, selecciona el archivo .key.');
                             return;
                         }
-                        key = await getFileAsKey(keyFileInput.files[0]);
+                        clave = await obtenerClaveDesdeArchivo(inputArchivoClave.files[0]);
                     } else {
-                        if (!accessPasswordInput.value) {
-                            showError('accessErrorKey', 'Por favor, ingresa la contraseña.');
+                        // Método de contraseña
+                        if (!inputContrasenaAcceso.value) {
+                            mostrarError('accessErrorKey', 'Por favor, ingresa la contraseña.');
                             return;
                         }
                         const saltWordArray = CryptoJS.enc.Base64.parse(salt);
-                        key = deriveKeyFromPassword(accessPasswordInput.value, saltWordArray);
+                        clave = derivarClaveDesdeContrasena(inputContrasenaAcceso.value, saltWordArray);
                     }
 
-                    const originalUrl = decryptUrl(encrypted, key);
-                    if (!originalUrl) {
-                        showError('accessErrorKey', 'La clave o contraseña es incorrecta.');
+                    // Descifrar la URL con la clave obtenida
+                    const urlOriginal = descifrarUrl(cifrado, clave);
+                    if (!urlOriginal) {
+                        mostrarError('accessErrorKey', 'La clave o contraseña es incorrecta.');
                         return;
                     }
 
-                    document.getElementById('originalUrl').value = originalUrl;
-                    resultContainer.style.display = 'block';
-                    resultContainer.classList.add('result-animation');
+                    // Mostrar la URL original
+                    document.getElementById('originalUrl').value = urlOriginal;
+                    contenedorResultados.style.display = 'block';
+                    contenedorResultados.classList.add('result-animation');
                     document.getElementById('accessSuccess').style.display = 'block';
                 } catch (error) {
                     console.error('Error al acceder a la URL:', error);
-                    showError('accessErrorKey', 'Ocurrió un error inesperado al descifrar el enlace.');
+                    mostrarError('accessErrorKey', 'Ocurrió un error inesperado al descifrar el enlace.');
                 } finally {
-                    toggleLoading('accessBtn', 'accessBtnSpinner', false);
+                    alternarEstadoCarga('accessBtn', 'accessBtnSpinner', false);
                 }
-            }, 50);
+            }, 50); // 50ms de espera para que la UI se actualice
         }
         
-        function copyToClipboard(elementId, buttonElement) {
-            const element = document.getElementById(elementId);
-            element.select();
-            element.setSelectionRange(0, 99999);
+        /**
+         * Copia el contenido de un elemento al portapapeles.
+         * @param {string} idElemento - ID del elemento cuyo contenido se va a copiar.
+         * @param {HTMLElement} boton - El botón que activó la acción.
+         */
+        function copiarAlPortapapeles(idElemento, boton) {
+            const elemento = document.getElementById(idElemento);
+            elemento.select();
+            elemento.setSelectionRange(0, 99999);
             
-            navigator.clipboard.writeText(element.value)
+            navigator.clipboard.writeText(elemento.value)
                 .then(() => {
-                    const originalText = buttonElement.innerHTML;
-                    buttonElement.innerHTML = '<i class="bi bi-check-lg me-2"></i>¡Copiado!';
+                    const textoOriginal = boton.innerHTML;
+                    boton.innerHTML = '<i class="bi bi-check-lg me-2"></i>¡Copiado!';
                     
                     // Añadir atributo ARIA para notificar a lectores de pantalla
-                    const originalAriaLabel = buttonElement.getAttribute('aria-label');
-                    buttonElement.setAttribute('aria-label', 'Texto copiado al portapapeles');
+                    const etiquetaAriaOriginal = boton.getAttribute('aria-label');
+                    boton.setAttribute('aria-label', 'Texto copiado al portapapeles');
                     
                     setTimeout(() => {
-                        buttonElement.innerHTML = originalText;
-                        if (originalAriaLabel) {
-                            buttonElement.setAttribute('aria-label', originalAriaLabel);
+                        boton.innerHTML = textoOriginal;
+                        if (etiquetaAriaOriginal) {
+                            boton.setAttribute('aria-label', etiquetaAriaOriginal);
                         } else {
-                            buttonElement.removeAttribute('aria-label');
+                            boton.removeAttribute('aria-label');
                         }
                     }, 2000);
                 })
                 .catch(err => {
                     console.error('Error al copiar al portapapeles: ', err);
-                    showError('accessErrorKey', 'No se pudo copiar el texto al portapapeles.');
+                    mostrarError('accessErrorKey', 'No se pudo copiar el texto al portapapeles.');
                 });
         }
         
@@ -1986,7 +2274,7 @@
          * @param {string} url - La URL a validar
          * @returns {boolean} - True si la URL es válida, False en caso contrario
          */
-        function isValidUrl(url) {
+        function esUrlValida(url) {
             try {
                 new URL(url);
                 return true;
@@ -1994,6 +2282,12 @@
                 return false;
             }
         }
+        
+        /**
+         * =================================================================
+         * MANEJO DE PARÁMETROS DE URL AL CARGAR LA PÁGINA
+         * =================================================================
+         */
         
         window.addEventListener('load', function() {
             const hash = window.location.hash;
