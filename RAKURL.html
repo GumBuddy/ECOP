@@ -895,7 +895,7 @@
                                 <button class="btn download-btn" id="downloadKeyBtn" aria-describedby="downloadKeyBtnHelp">
                                     <i class="bi bi-download me-2" aria-hidden="true"></i>Descargar Archivo .key
                                 </button>
-                                <button class="btn share-key-btn" id="shareKeyBtn" aria-describedby="shareKeyBtnHelp">
+                                <button class="btn share-qr-btn" id="shareKeyBtn" aria-describedby="shareKeyBtnHelp">
                                     <i class="bi bi-share me-2" aria-hidden="true"></i>Compartir Archivo .key
                                 </button>
                             </div>
@@ -1401,7 +1401,8 @@
         function generateKeyFile() {
             const keyArray = new Uint8Array(KEY_FILE_SIZE_BYTES);
             window.crypto.getRandomValues(keyArray);
-            const blob = new Blob([keyArray], { type: 'application/octet-stream' });
+            // Cambiado de application/octet-stream a text/plain para compatibilidad con la API de compartir
+            const blob = new Blob([keyArray], { type: 'text/plain' });
             const timestamp = new Date().getTime();
             const fileName = `rakurl_key_${timestamp}.key`;
             
@@ -1448,13 +1449,16 @@
                 // Mensaje personalizado para compartir
                 const shareMessage = "RAKURL Security: Este es tu archivo de clave de acceso:";
                 
+                // Crear un objeto File con el tipo text/plain para compatibilidad con la API de compartir
+                const file = new File([appState.generatedKeyFile.blob], appState.generatedKeyFile.name, { type: 'text/plain' });
+                
                 // Comprobar si se puede usar la API nativa para compartir archivos
-                if (navigator.share && navigator.canShare({ files: [appState.generatedKeyFile.blob] })) {
+                if (navigator.share && navigator.canShare({ files: [file] })) {
                     // Opción 1: Usar la API nativa
                     await navigator.share({
                         title: 'RAKURL Security - Archivo de Clave',
                         text: shareMessage,
-                        files: [appState.generatedKeyFile.blob]
+                        files: [file]
                     });
                 } else {
                     // Opción 2: El navegador no es compatible, mostrar mensaje
