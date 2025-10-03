@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuestionario Interactivo - Nutrición Animal</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        
+        h1 {
+            margin: 0;
+            font-size: 2.2rem;
+        }
+        
+        .progress-container {
+            background: #f0f0f0;
+            height: 10px;
+            margin: 0;
+        }
+        
+        .progress-bar {
+            background: #4CAF50;
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .quiz-container {
+            padding: 30px;
+        }
+        
+        .question {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+        
+        .options {
+            margin-bottom: 30px;
+        }
+        
+        .option {
+            display: block;
+            background: #f9f9f9;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .option:hover {
+            background: #f0f7ff;
+            border-color: #667eea;
+        }
+        
+        .option.selected {
+            background: #e8f0fe;
+            border-color: #4285f4;
+            font-weight: 500;
+        }
+        
+        .option.correct {
+            background: #e8f5e9;
+            border-color: #4CAF50;
+        }
+        
+        .option.incorrect {
+            background: #ffebee;
+            border-color: #f44336;
+        }
+        
+        .feedback {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .feedback.correct {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 5px solid #4CAF50;
+        }
+        
+        .feedback.incorrect {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 5px solid #f44336;
+        }
+        
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .results {
+            display: none;
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .results h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+        
+        .score {
+            font-size: 3rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #4CAF50;
+        }
+        
+        .result-message {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 15px;
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Cuestionario Interactivo - Nutrición Animal</h1>
+            <p>Primer Parcial</p>
+        </header>
+        
+        <div class="progress-container">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        
+        <div class="quiz-container" id="quiz-container">
+            <div class="question" id="question-text"></div>
+            <div class="options" id="options-container"></div>
+            <div class="feedback" id="feedback"></div>
+            <div class="buttons">
+                <button id="prev-btn" disabled>Anterior</button>
+                <button id="next-btn" disabled>Siguiente</button>
+                <button id="check-btn" disabled>Verificar</button>
+            </div>
+        </div>
+        
+        <div class="results" id="results">
+            <h2>Resultados del Cuestionario</h2>
+            <div class="score" id="score"></div>
+            <div class="result-message" id="result-message"></div>
+            <button class="restart-btn" id="restart-btn">Reiniciar Cuestionario</button>
+        </div>
+        
+        <footer>
+            <p>© 2023 Cuestionario de Nutrición Animal - Todos los derechos reservados</p>
+        </footer>
+    </div>
+
+    <script>
+        // Base de datos de preguntas
+        const questions = [
+            {
+                question: "Si tengo una eficiencia alimenticia de 0.7 en producción de carne ¿Cuál es la interpretación de este indicador?",
+                options: [
+                    "a) Que por cada 700g de alimento se obtiene 1kg de peso ganado",
+                    "b) Que por cada 700g de peso ganados se requieren un kilogramo de alimento",
+                    "c) Que se necesita un 70% más de alimento para aumentar de peso",
+                    "d) Que el 70% del alimento se convierte en carne"
+                ],
+                correctAnswer: "b",
+                explanation: "Que por cada 700g de peso ganados se requieren un kilogramo de alimento."
+            },
+            {
+                question: "Si un pollo come 3.5 kg y gana 2 kg de peso ¿Cuál es su conversión alimenticia?",
+                options: [
+                    "a) 0.57",
+                    "b) 1.5",
+                    "c) 1.75",
+                    "d) 2.0"
+                ],
+                correctAnswer: "c",
+                explanation: "Conversión alimenticia = alimento consumido / peso ganado = 3.5 kg / 2 kg = 1.75"
+            },
+            {
+                question: "Si durante 200 días, 80 gallinas pusieron 60 huevos diarios de 50 gr y consumieron 90 gr de alimento al día por gallina ¿Cuál sería su eficiencia alimenticia?",
+                options: [
+                    "a) 0.25",
+                    "b) 0.33",
+                    "c) 0.41",
+                    "d) 0.50"
+                ],
+                correctAnswer: "c",
+                explanation: "Eficiencia = (Huevos producidos * peso huevo) / (alimento total) = (60*50) / (80*90) ≈ 0.41"
+            },
+            {
+                question: "Cuando sometemos a una muestra a un tratamiento con detergente neutro estamos barriendo con:",
+                options: [
+                    "a) Paredes celulares",
+                    "b) Contenido celular",
+                    "c) Fibra detergente neutra",
+                    "d) Materia orgánica"
+                ],
+                correctAnswer: "b",
+                explanation: "El detergente neutro rompe paredes celulares, eliminando el contenido celular."
+            },
+            {
+                question: "En la boca, la _________ es el proceso que permite el humedecimiento y consiguiente ablandamiento del alimento.",
+                options: [
+                    "a) Masticación",
+                    "b) Digestión",
+                    "c) Insalivación",
+                    "d) Deglución"
+                ],
+                correctAnswer: "c",
+                explanation: "La insalivación humedece y ablanda el alimento durante la masticación."
+            },
+            {
+                question: "En los análisis de laboratorios, ¿qué se obtiene de la multiplicación del nitrógeno total por el factor 6.25?",
+                options: [
+                    "a) Proteína soluble",
+                    "b) Proteína cruda",
+                    "c) Nitrógeno no proteico",
+                    "d) Aminoácidos esenciales"
+                ],
+                correctAnswer: "b",
+                explanation: "Proteína cruda = Nitrógeno total × 6.25 (factor estándar)."
+            },
+            {
+                question: "Es una glándula accesoria encargada de producir la bilis.",
+                options: [
+                    "a) Páncreas",
+                    "b) Vesícula biliar",
+                    "c) Hígado",
+                    "d) Glándula salival"
+                ],
+                correctAnswer: "c",
+                explanation: "El hígado produce la bilis, que se almacena en la vesícula biliar."
+            },
+            {
+                question: "Esta estructura de los rumiantes es la encargada de conducir la leche ingerida por los lactantes directamente del esófago al abomaso.",
+                options: [
+                    "a) Rumen",
+                    "b) Retículo",
+                    "c) Canal esofágico",
+                    "d) Omaso"
+                ],
+                correctAnswer: "c",
+                explanation: "El canal esofágico desvía la leche directamente al abomaso en rumiantes lactantes."
+            },
+            {
+                question: "Se tiene los siguientes datos del análisis proximal y digestibilidad de un alimento. ¿Cuánto es el valor que aporta el extracto etéreo? (Proteína cruda 12% Digestibilidad 80%), (Extracto etéreo 3% Digestibilidad 80%), (Fibra cruda 10% Digestibilidad 50%), (Extracto libre de nitrógeno 60% Digestibilidad 80%).",
+                options: [
+                    "a) 240",
+                    "b) 360",
+                    "c) 480",
+                    "d) 540"
+                ],
+                correctAnswer: "d",
+                explanation: "Extracto etéreo = 3% × 80% × 2.25 = 0.03 × 0.8 × 2.25 = 0.054 = 540 (por cada 1000 unidades)"
+            },
+            {
+                question: "En el sistema nervioso central existen dos centros de control, uno para el apetito y uno para la saciedad. ¿Dónde se encuentra ubicado el centro de la saciedad?",
+                options: [
+                    "a) Hipotálamo lateral",
+                    "b) Hipotálamo ventromedial",
+                    "c) Corteza cerebral",
+                    "d) Cerebelo"
+                ],
+                correctAnswer: "b",
+                explanation: "El centro de la saciedad se encuentra en el hipotálamo ventromedial."
+            },
+            {
+                question: "La unión de dos moléculas de glucosa nos da:",
+                options: [
+                    "a) Monosacáridos",
+                    "b) Disacáridos",
+                    "c) Polisacáridos",
+                    "d) Oligosacáridos"
+                ],
+                correctAnswer: "b",
+                explanation: "La unión de dos moléculas de glucosa forma un disacárido (maltosa)."
+            },
+            {
+                question: "En el consumo voluntario, la teoría _________ es considerada un mecanismo a corto plazo, regulado por el centro de la saciedad y el apetito en el hipotálamo.",
+                options: [
+                    "a) Termostática",
+                    "b) Glucostática",
+                    "c) Lipostática",
+                    "d) Ostestática"
+                ],
+                correctAnswer: "b",
+                explanation: "La teoría glucostática regula el consumo a corto plazo mediante niveles de glucosa."
+            },
+            {
+                question: "Este factor del consumo voluntario parece estar influenciado por el tiempo de fermentación y este con el tamaño de partícula y la composición química.",
+                options: [
+                    "a) Palatabilidad",
+                    "b) Velocidad de paso",
+                    "c) Densidad energética",
+                    "d) Contenido de fibra"
+                ],
+                correctAnswer: "b",
+                explanation: "La velocidad de paso está influenciada por el tiempo de fermentación, tamaño de partícula y composición química."
+            },
+            {
+                question: "Este compuesto es considerado un glúcido estructural de las plantas:",
+                options: [
+                    "a) Almidón",
+                    "b) Sacarosa",
+                    "c) Celulosa",
+                    "d) Glucosa"
+                ],
+                correctAnswer: "c",
+                explanation: "La celulosa es un polisacárido estructural que forma parte de las paredes celulares vegetales."
+            },
+            {
+                question: "Se define como el porcentaje de nutrimento que desaparece a su paso por el tubo gastrointestinal.",
+                options: [
+                    "a) Absorción",
+                    "b) Metabolización",
+                    "c) Digestibilidad",
+                    "d) Asimilación"
+                ],
+                correctAnswer: "c",
+                explanation: "La digestibilidad mide el porcentaje de un nutriente que es digerido y absorbido."
+            },
+            {
+                question: "Los triglicéridos están compuestos por:",
+                options: [
+                    "a) Glicerol y Ac. grasos",
+                    "b) Proteínas y carbohidratos",
+                    "c) Aminoácidos y azúcares",
+                    "d) Fosfolípidos y colesterol"
+                ],
+                correctAnswer: "a",
+                explanation: "Los triglicéridos están formados por una molécula de glicerol y tres ácidos grasos."
+            },
+            {
+                question: "El consumo voluntario está influenciado por factores del alimento, el animal y el ambiente. ¿Cuál de los siguientes factores que afectan el consumo voluntario es del alimento?",
+                options: [
+                    "a) Edad del animal",
+                    "b) Temperatura ambiental",
+                    "c) Palatabilidad (Gustosidad)",
+                    "d) Estado fisiológico"
+                ],
+                correctAnswer: "c",
+                explanation: "La palatabilidad (gustosidad) es una propiedad del alimento que influye en su consumo."
+            },
+            {
+                question: "Estimula al páncreas para la secreción de un líquido viscoso de elevada acción enzimática.",
+                options: [
+                    "a) Secretina",
+                    "b) Gastrina",
+                    "c) Colecistoquinina",
+                    "d) Insulina"
+                ],
+                correctAnswer: "c",
+                explanation: "La colecistoquinina estimula la secreción pancreática de enzimas digestivas."
+            },
+            {
+                question: "¿A cuántos Joule equivale una caloría?",
+                options: [
+                    "a) 4.184",
+                    "b) 1.000",
+                    "c) 0.239",
+                    "d) 3.412"
+                ],
+                correctAnswer: "a",
+                explanation: "1 caloría = 4.184 joules (equivalencia energética)."
+            },
+            {
+                question: "Se define como la necesidad fisiológica y/o psicológica que experimenta el animal que lo obliga a comer.",
+                options: [
+                    "a) Hambre",
+                    "b) Apetito",
+                    "c) Saciedad",
+                    "d) Nutrición"
+                ],
+                correctAnswer: "b",
+                explanation: "El apetito es el deseo de comer, influenciado por factores fisiológicos y psicológicos."
+            },
+            {
+                question: "De las siguientes estructuras, ¿Cuáles son parte del sistema digestivo de las aves?",
+                options: [
+                    "a) Molleja, Buche, Proventrículo",
+                    "b) Rumen, Retículo, Omaso",
+                    "c) Ceco, Colon, Recto",
+                    "d) Vesícula biliar, Páncreas, Hígado"
+                ],
+                correctAnswer: "a",
+                explanation: "Las aves tienen buche (almacenamiento), proventrículo (secreción ácida) y molleja (molienda)."
+            },
+            {
+                question: "En el laboratorio usamos un equipo que se conoce como mufla para incinerar la muestra ¿Qué se obtiene de la diferencia entre la materia seca de la muestra y las cenizas?",
+                options: [
+                    "a) Materia inorgánica",
+                    "b) Materia orgánica",
+                    "c) Humedad",
+                    "d) Proteína cruda"
+                ],
+                correctAnswer: "b",
+                explanation: "La diferencia entre materia seca y cenizas corresponde a la materia orgánica."
+            },
+            {
+                question: "¿Qué mineral se les debe proporcionar a los lechones, por su deficiencia en la leche?",
+                options: [
+                    "a) Calcio",
+                    "b) Fósforo",
+                    "c) Hierro",
+                    "d) Zinc"
+                ],
+                correctAnswer: "c",
+                explanation: "La leche porcina es deficiente en hierro, lo que puede causar anemia en lechones."
+            },
+            {
+                question: "Órgano del sistema digestivo de los monogástricos cuya función es muy parecida al rumen.",
+                options: [
+                    "a) Estómago",
+                    "b) Intestino delgado",
+                    "c) Intestino grueso",
+                    "d) Páncreas"
+                ],
+                correctAnswer: "c",
+                explanation: "En monogástricos, el intestino grueso alberga fermentación microbiana similar al rumen."
+            },
+            {
+                question: "En el desdoblamiento de aminoácidos, la pérdida del grupo carboxilo se define como:",
+                options: [
+                    "a) Desaminación",
+                    "b) Descarboxilación",
+                    "c) Transaminación",
+                    "d) Hidrólisis"
+                ],
+                correctAnswer: "b",
+                explanation: "La descarboxilación es la pérdida del grupo carboxilo (-COOH) de un aminoácido."
+            },
+            {
+                question: "La absorción de proteínas intactas en los neonatos se da por:",
+                options: [
+                    "a) Difusión pasiva",
+                    "b) Transporte activo",
+                    "c) Pinocitosis",
+                    "d) Facilitación"
+                ],
+                correctAnswer: "c",
+                explanation: "La pinocitosis permite la absorción de proteínas intactas (como inmunoglobulinas) en neonatos."
+            },
+            {
+                question: "Órgano que actúa como punto de concentración, procesamiento y distribución de nutrimentos.",
+                options: [
+                    "a) Riñón",
+                    "b) Bazo",
+                    "c) Páncreas",
+                    "d) Hígado"
+                ],
+                correctAnswer: "d",
+                explanation: "El hígado procesa y distribuye nutrientes absorbidos desde el intestino."
+            }
+        ];
+
+        // Variables del cuestionario
+        let currentQuestion = 0;
+        let score = 0;
+        let selectedOption = null;
+        let answered = false;
+
+        // Elementos del DOM
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const feedback = document.getElementById('feedback');
+        const checkBtn = document.getElementById('check-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const quizContainer = document.getElementById('quiz-container');
+        const resultsContainer = document.getElementById('results');
+        const scoreElement = document.getElementById('score');
+        const resultMessage = document.getElementById('result-message');
+        const restartBtn = document.getElementById('restart-btn');
+
+        // Inicializar cuestionario
+        function initQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            selectedOption = null;
+            answered = false;
+            quizContainer.style.display = 'block';
+            resultsContainer.style.display = 'none';
+            showQuestion();
+            updateButtons();
+            updateProgress();
+        }
+
+        // Mostrar pregunta actual
+        function showQuestion() {
+            const question = questions[currentQuestion];
+            questionText.textContent = question.question;
+            
+            // Limpiar opciones anteriores
+            optionsContainer.innerHTML = '';
+            
+            // Crear nuevas opciones
+            question.options.forEach((option, index) => {
+                const optionElement = document.createElement('div');
+                optionElement.className = 'option';
+                optionElement.textContent = option;
+                optionElement.dataset.index = index;
+                optionElement.addEventListener('click', selectOption);
+                optionsContainer.appendChild(optionElement);
+            });
+            
+            // Resetear estado
+            selectedOption = null;
+            answered = false;
+            feedback.style.display = 'none';
+            checkBtn.disabled = true;
+            updateButtons();
+        }
+
+        // Seleccionar opción
+        function selectOption(e) {
+            if (answered) return;
+            
+            // Quitar selección anterior
+            document.querySelectorAll('.option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            
+            // Marcar nueva selección
+            e.target.classList.add('selected');
+            selectedOption = e.target.dataset.index;
+            checkBtn.disabled = false;
+        }
+
+        // Verificar respuesta
+        function checkAnswer() {
+            if (selectedOption === null || answered) return;
+            
+            answered = true;
+            const question = questions[currentQuestion];
+            const isCorrect = String.fromCharCode(97 + parseInt(selectedOption)) === question.correctAnswer;
+            
+            // Mostrar retroalimentación
+            feedback.textContent = isCorrect 
+                ? `¡Correcto! ${question.explanation}` 
+                : `Incorrecto. La respuesta correcta es: ${question.correctAnswer}. ${question.explanation}`;
+            feedback.className = `feedback ${isCorrect ? 'correct' : 'incorrect'}`;
+            feedback.style.display = 'block';
+            
+            // Marcar opciones
+            document.querySelectorAll('.option').forEach((opt, index) => {
+                const optionLetter = String.fromCharCode(97 + index);
+                if (optionLetter === question.correctAnswer) {
+                    opt.classList.add('correct');
+                } else if (index == selectedOption && !isCorrect) {
+                    opt.classList.add('incorrect');
+                }
+            });
+            
+            // Actualizar puntuación
+            if (isCorrect) {
+                score++;
+            }
+            
+            // Actualizar botones
+            checkBtn.disabled = true;
+            updateButtons();
+        }
+
+        // Navegación entre preguntas
+        function nextQuestion() {
+            if (currentQuestion < questions.length - 1) {
+                currentQuestion++;
+                showQuestion();
+                updateProgress();
+            } else {
+                showResults();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                currentQuestion--;
+                showQuestion();
+                updateProgress();
+            }
+        }
+
+        // Actualizar botones de navegación
+        function updateButtons() {
+            prevBtn.disabled = currentQuestion === 0;
+            nextBtn.textContent = currentQuestion === questions.length - 1 ? 'Finalizar' : 'Siguiente';
+            nextBtn.disabled = !answered;
+        }
+
+        // Actualizar barra de progreso
+        function updateProgress() {
+            const progress = ((currentQuestion + 1) / questions.length) * 100;
+            progressBar.style.width = `${progress}%`;
+        }
+
+        // Mostrar resultados finales
+        function showResults() {
+            quizContainer.style.display = 'none';
+            resultsContainer.style.display = 'block';
+            
+            const percentage = Math.round((score / questions.length) * 100);
+            scoreElement.textContent = `${score}/${questions.length} (${percentage}%)`;
+            
+            let message = '';
+            if (percentage >= 90) {
+                message = '¡Excelente trabajo! Tienes un conocimiento sólido sobre nutrición animal.';
+            } else if (percentage >= 70) {
+                message = 'Buen trabajo! Repasa algunos conceptos para mejorar aún más.';
+            } else if (percentage >= 50) {
+                message = 'Esfuerzo reconocido. Te recomendamos repasar los temas donde tuviste dificultades.';
+            } else {
+                message = 'Sigue practicando. La repetición es clave para el aprendizaje.';
+            }
+            
+            resultMessage.textContent = message;
+        }
+
+        // Event Listeners
+        checkBtn.addEventListener('click', checkAnswer);
+        nextBtn.addEventListener('click', nextQuestion);
+        prevBtn.addEventListener('click', prevQuestion);
+        restartBtn.addEventListener('click', initQuiz);
+
+        // Iniciar el cuestionario
+        initQuiz();
+    </script>
+</body>
+</html>
