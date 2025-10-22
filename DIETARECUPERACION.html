@@ -671,6 +671,10 @@
         .settings-panel .form-group {
             margin-bottom: 15px;
         }
+        
+        .settings-panel .form-group input[type="password"] {
+            font-family: monospace;
+        }
 
         .settings-panel label {
             display: block;
@@ -890,7 +894,6 @@
                             </tr>
                         </thead>
                         <tbody id="calendar-body">
-                            <!-- Las filas del calendario se generarán con JavaScript -->
                         </tbody>
                     </table>
                 </div>
@@ -905,7 +908,6 @@
                     <button class="close-details" aria-label="Cerrar detalles"><i class="fas fa-times"></i></button>
                     <h3 id="day-details-title"><i class="fas fa-info-circle"></i> Detalles del Día</h3>
                     <div class="recipe-details" id="recipe-details-content">
-                        <!-- Los detalles de la receta se cargarán dinámicamente -->
                     </div>
                 </div>
             </div>
@@ -935,7 +937,7 @@
         </div>
         <div id="chat-history" class="chat-history" aria-live="polite">
             <div class="ai-message">
-                <p>¡Hola! Soy tu asistente de cuidados. ¿En qué puedo ayudarte hoy? Puedes pedirme recetas, consejos de hidratación, o preguntarme sobre ingredientes.</p>
+                <p>¡Hola! Soy tu asistente de cuidados. ¿En qué puedo ayudarte hoy?</p>
             </div>
         </div>
         <div class="chat-input-area">
@@ -961,15 +963,15 @@
         <h3><i class="fas fa-sliders-h"></i> Configuración</h3>
         <div class="form-group">
             <label for="dog-weight-input">Peso del perro (kg):</label>
-            <input type="number" id="dog-weight-input" min="1" max="100" step="0.5" value="20">
+            <input type="number" id="dog-weight-input" min="1" max="100" step="0.5">
         </div>
         <div class="form-group">
             <label for="plan-duration-input">Duración del plan (días):</label>
-            <input type="number" id="plan-duration-input" min="1" max="365" value="30">
+            <input type="number" id="plan-duration-input" min="1" max="365">
         </div>
-        <div class="form-group">
-            <label for="current-day-input">Día actual del plan:</label>
-            <input type="number" id="current-day-input" min="0" max="30" value="0">
+         <div class="form-group">
+            <label for="start-date-input">Fecha de Inicio del Plan:</label>
+            <input type="date" id="start-date-input">
         </div>
         <div class="form-group">
             <label for="theme-select">Tema:</label>
@@ -978,6 +980,10 @@
                 <option value="dark">Oscuro</option>
                 <option value="high-contrast">Alto contraste</option>
             </select>
+        </div>
+         <div class="form-group">
+            <label for="api-key-input">Clave API de Gemini:</label>
+            <input type="password" id="api-key-input" placeholder="Pega tu clave aquí">
         </div>
         <div class="btn-group">
             <button id="save-settings" class="save-btn">Guardar</button>
@@ -995,12 +1001,12 @@
     // Datos de las recetas
     const recipes = {
         1: {
-            title: "Comida 1: Hígado y Res",
+            title: "Comida 1: Potencia de Hígado y Res",
             description: "El hígado es el alimento estrella para la anemia por su altísimo contenido de hierro y vitaminas B.",
             ingredients: ["<strong>150g</strong> de Hígado de res (cocido)", "<strong>150g</strong> de Carne molida de res (magra, cocida)", "<strong>100g</strong> de Arroz blanco (bien cocido)", "<strong>50g</strong> de Espinacas (cocidas y picadas)"]
         },
         2: {
-            title: "Comida 2: Pollo y Huevo",
+            title: "Comida 2: Festín de Pollo y Huevo",
             description: "Proteína de alta calidad y fácil digestión, con el poder de la yema de huevo.",
             ingredients: ["<strong>200g</strong> de Pechuga de pollo (cocida y desmenuzada)", "<strong>1 Huevo</strong> duro (cocido y picado)", "<strong>100g</strong> de Camote (papa dulce) (hervido y hecho puré)", "<strong>50g</strong> de Zanahoria (cocida y rallada)"]
         },
@@ -1010,12 +1016,12 @@
             ingredients: ["<strong>200g</strong> de Corazón de res (bien cocido y picado finamente)", "<strong>100g</strong> de Lentejas (muy bien cocidas)", "<strong>100g</strong> de Calabaza (ayote) (cocida y hecha puré)", "<strong>50g</strong> de Brócoli (cocido al vapor)"]
         },
         4: {
-            title: "Comida 4: Pescado",
+            title: "Comida 4: Sorpresa de Pescado",
             description: "Las sardinas aportan Omega-3, que es un excelente antiinflamatorio natural.",
             ingredients: ["<strong>1 Lata</strong> de Sardinas (en agua, sin sal)", "<strong>150g</strong> de Pollo molido (cocido)", "<strong>100g</strong> de Papa (cocida y machacada)", "<strong>50g</strong> de Chícharos (guisantes) (cocidos)"]
         },
         5: {
-            title: "Comida 5: Caldo",
+            title: "Comida 5: Caldo Sustancioso",
             description: "Ideal para días con poco apetito. Hidrata y nutre de forma suave.",
             ingredients: ["<strong>1 Taza</strong> de Caldo de hueso (casero, sin sal)", "<strong>200g</strong> de Muslos de pollo (cocidos y desmenuzados)", "<strong>100g</strong> de Arroz (sobre-cocido en el caldo)", "<strong>50g</strong> de Apio y Zanahoria (muy finos y cocidos)"]
         }
@@ -1033,46 +1039,51 @@
     let settings = {
         dogWeight: 20,
         planDuration: 30,
-        currentDay: 0,
+        currentDay: 0, // Se recalculará al cargar
         theme: 'default',
-        startDate: new Date().toISOString().split('T')[0] // Guardar solo la fecha
+        startDate: new Date().toISOString().split('T')[0],
+        apiKey: ''
     };
 
-    // Cargar configuración guardada
+    // --- MANEJO DE CONFIGURACIÓN ---
     function loadSettings() {
         const savedSettings = localStorage.getItem('nutritionPlanSettings');
         if (savedSettings) {
-            settings = JSON.parse(savedSettings);
+            settings = { ...settings, ...JSON.parse(savedSettings) };
         }
-        // Autocalcular el día actual basado en la fecha de inicio
-        const startDate = new Date(settings.startDate);
-        const today = new Date();
-        today.setHours(0,0,0,0);
-        startDate.setHours(0,0,0,0);
-
-        const diffTime = Math.abs(today - startDate);
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        
-        settings.currentDay = Math.min(diffDays, settings.planDuration);
-        
+        updateCurrentDay();
         updateUIWithSettings();
-        updateProgress();
     }
 
-    // Guardar configuración
     function saveSettings() {
         localStorage.setItem('nutritionPlanSettings', JSON.stringify(settings));
         showNotification('Configuración guardada correctamente', 'success');
     }
+    
+    function updateCurrentDay() {
+        const startDate = new Date(settings.startDate);
+        const today = new Date();
+        // Normalizar fechas a medianoche para una comparación precisa
+        startDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+        
+        const diffTime = today - startDate;
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        settings.currentDay = Math.max(0, Math.min(diffDays, settings.planDuration -1));
+    }
 
-    // Actualizar UI con la configuración
     function updateUIWithSettings() {
+        // Actualizar textos principales
         document.getElementById('dog-weight').textContent = settings.dogWeight;
         document.getElementById('plan-duration').textContent = settings.planDuration;
+        
+        // Actualizar valores en el panel de configuración
         document.getElementById('dog-weight-input').value = settings.dogWeight;
         document.getElementById('plan-duration-input').value = settings.planDuration;
-        document.getElementById('current-day-input').value = settings.currentDay;
-        
+        document.getElementById('start-date-input').value = settings.startDate;
+        document.getElementById('api-key-input').value = settings.apiKey;
+
         const minAmount = Math.round(settings.dogWeight * 30);
         const maxAmount = Math.round(settings.dogWeight * 40);
         document.getElementById('daily-amount').textContent = `${minAmount} a ${maxAmount} gramos`;
@@ -1080,7 +1091,6 @@
         applyTheme(settings.theme);
     }
 
-    // Aplicar tema
     function applyTheme(theme) {
         document.getElementById('theme-select').value = theme;
         document.body.className = '';
@@ -1092,43 +1102,18 @@
     const themeStyles = `
         body.dark-theme { background-color: #222; color: #ddd; }
         body.dark-theme .container, body.dark-theme .settings-panel, body.dark-theme .ai-chat-window { background-color: #333; color: #ddd; }
-        body.dark-theme .meal-card, body.dark-theme .spice-list.allowed, body.dark-theme .spice-list.prohibited, body.dark-theme .progress-section, body.dark-theme .recipe-details, body.dark-theme .ai-message { background-color: #444; }
+        body.dark-theme .meal-card, body.dark-theme .spice-list.allowed, body.dark-theme .spice-list.prohibited, body.dark-theme .progress-section, body.dark-theme .recipe-details, body.dark-theme .ai-message, body.dark-theme .day-details { background-color: #444; }
         body.dark-theme .calendar-table th { background-color: #555;}
         body.dark-theme .calendar-table td:hover { background-color: #4a4a4a;}
         body.high-contrast-theme { background-color: #000; color: #fff; }
         body.high-contrast-theme .container, body.high-contrast-theme .settings-panel { background-color: #000; color: #fff; border: 2px solid #fff; }
-        body.high-contrast-theme h2, body.high-contrast-theme .day-number { color: #fff; }
+        body.high-contrast-theme h2, body.high-contrast-theme .day-number, body.high-contrast-theme label { color: #fff; }
     `;
     const styleSheet = document.createElement("style");
     styleSheet.innerText = themeStyles;
     document.head.appendChild(styleSheet);
-
-
-    // Actualizar progreso y fechas
-    function updateProgress() {
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
-        const percentage = (settings.currentDay / settings.planDuration) * 100;
-        
-        progressBar.style.width = `${Math.min(percentage, 100)}%`;
-        progressText.textContent = `${settings.currentDay} de ${settings.planDuration} días`;
-        
-        // Actualizar fechas en la barra de progreso
-        const startDate = new Date(settings.startDate);
-        const currentDate = new Date();
-        const endDate = new Date(startDate);
-        endDate.setDate(startDate.getDate() + settings.planDuration - 1);
-
-        document.getElementById('start-date').textContent = formatDate(startDate);
-        document.getElementById('current-date').textContent = formatDate(currentDate);
-        document.getElementById('end-date').textContent = formatDate(endDate);
-    }
-
-    function formatDate(date) {
-        return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
-    }
-
-    // Mostrar receta
+    
+    // --- LÓGICA DE RECETAS ---
     function showRecipe(recipeId) {
         const recipe = recipes[recipeId];
         const display = document.getElementById('recipe-display');
@@ -1150,77 +1135,56 @@
         
         localStorage.setItem('lastViewedRecipe', recipeId);
     }
-
-    // Mostrar notificación
-    function showNotification(message, type = 'info') {
-        const notification = document.getElementById('notification');
-        const notificationText = document.getElementById('notification-text');
-        const icon = notification.querySelector('i');
-        
-        notification.className = 'notification';
-        notification.classList.add(type);
-        
-        if (type === 'success') icon.className = 'fas fa-check-circle';
-        else if (type === 'error') icon.className = 'fas fa-exclamation-circle';
-        else icon.className = 'fas fa-info-circle';
-        
-        notificationText.textContent = message;
-        notification.classList.add('show');
-        
-        setTimeout(() => notification.classList.remove('show'), 3000);
-    }
-
-    // --- Lógica del Calendario Interactivo ---
-    const calendarBody = document.getElementById('calendar-body');
-    const dayDetails = document.getElementById('day-details');
-    const recipeDetailsContent = document.getElementById('recipe-details-content');
-    const dayDetailsTitle = document.getElementById('day-details-title');
-    const closeDetailsBtn = document.querySelector('.close-details');
-    let currentWeek = 0;
-
+    
+    // --- LÓGICA DE CALENDARIO Y PROGRESO ---
+    let currentWeekOffset = 0; // Para navegar por semanas
+    
     function renderCalendar() {
+        const calendarBody = document.getElementById('calendar-body');
         calendarBody.innerHTML = '';
         const totalWeeks = Math.ceil(settings.planDuration / 7);
+        const firstDayOfWeek = new Date(settings.startDate);
+        firstDayOfWeek.setDate(firstDayOfWeek.getDate() - firstDayOfWeek.getDay() + 1 + (currentWeekOffset * 7)); // Ajustar al lunes de la semana actual
 
-        for (let week = 0; week < totalWeeks; week++) {
-            const row = document.createElement('tr');
-            if(week !== currentWeek) row.style.display = 'none';
+        const row = document.createElement('tr');
+        for (let i = 0; i < 7; i++) {
+            const dayDate = new Date(firstDayOfWeek);
+            dayDate.setDate(firstDayOfWeek.getDate() + i);
+            
+            const diffTime = dayDate - new Date(settings.startDate);
+            const dayNumber = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
+            
+            const cell = document.createElement('td');
+            if (dayNumber > 0 && dayNumber <= settings.planDuration) {
+                const mealPlanEntry = mealPlan.find(entry => entry.day === dayNumber);
+                const mealType = mealPlanEntry ? mealPlanEntry.meal : 0;
 
-            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
-                const dayNumber = week * 7 + dayOfWeek + 1;
-                const cell = document.createElement('td');
+                let dayClass = '';
+                if (dayNumber <= settings.currentDay + 1) dayClass = 'completed-day';
+                if (dayNumber === settings.currentDay + 1) dayClass = 'current-day';
                 
-                if (dayNumber <= settings.planDuration) {
-                    const mealPlanEntry = mealPlan.find(entry => entry.day === dayNumber);
-                    const mealType = mealPlanEntry ? mealPlanEntry.meal : 0;
-                    
-                    let dayClass = '';
-                    if (dayNumber < settings.currentDay + 1) dayClass = 'completed-day';
-                    else if (dayNumber === settings.currentDay + 1) dayClass = 'current-day';
-                    else dayClass = 'future-day';
-                    
-                    cell.className = dayClass;
-                    cell.innerHTML = `
-                        <div class="day-number">${dayNumber}</div>
-                        <div class="meal-type meal-${mealType}">Comida ${mealType}</div>
-                    `;
-                    cell.addEventListener('click', () => showDayDetails(dayNumber, mealType));
-                } else {
-                    cell.className = 'empty-cell';
-                }
-                row.appendChild(cell);
+                cell.className = dayClass;
+                cell.innerHTML = `
+                    <div class="day-number">${dayNumber}</div>
+                    <div class="meal-type meal-${mealType}">Comida ${mealType}</div>
+                `;
+                cell.addEventListener('click', () => showDayDetails(dayNumber, mealType));
             }
-            calendarBody.appendChild(row);
+            row.appendChild(cell);
         }
-        document.getElementById('calendar-title').textContent = `Semana ${currentWeek + 1} de ${totalWeeks}`;
-        document.getElementById('prev-week').disabled = currentWeek === 0;
-        document.getElementById('next-week').disabled = currentWeek === totalWeeks - 1;
+        calendarBody.appendChild(row);
+
+        document.getElementById('calendar-title').textContent = `Semana del ${formatDate(firstDayOfWeek)}`;
+        document.getElementById('prev-week').disabled = currentWeekOffset === 0;
+        document.getElementById('next-week').disabled = ((currentWeekOffset + 1) * 7) >= settings.planDuration;
     }
+
 
     function showDayDetails(dayNumber, mealType) {
         const recipe = recipes[mealType];
-        dayDetailsTitle.innerHTML = `<i class="fas fa-info-circle"></i> Detalles del Día ${dayNumber}`;
-        recipeDetailsContent.innerHTML = `
+        const dayDetails = document.getElementById('day-details');
+        document.getElementById('day-details-title').innerHTML = `<i class="fas fa-info-circle"></i> Detalles del Día ${dayNumber}`;
+        document.getElementById('recipe-details-content').innerHTML = `
             <h4>${recipe.title}</h4>
             <p>${recipe.description}</p>
             <h5>Ingredientes:</h5>
@@ -1228,84 +1192,39 @@
         `;
         dayDetails.classList.add('active');
     }
-    
-    closeDetailsBtn.addEventListener('click', () => dayDetails.classList.remove('active'));
 
-    document.getElementById('prev-week').addEventListener('click', () => {
-        if(currentWeek > 0) {
-            currentWeek--;
-            renderCalendar();
-        }
-    });
-
-    document.getElementById('next-week').addEventListener('click', () => {
-        const totalWeeks = Math.ceil(settings.planDuration / 7);
-        if(currentWeek < totalWeeks - 1) {
-            currentWeek++;
-            renderCalendar();
-        }
-    });
-
-    // --- Lógica del Chat de IA ---
-    const openChatBtn = document.getElementById('open-chat-bubble');
-    const closeChatBtn = document.getElementById('close-chat-btn');
-    const aiChatWindow = document.getElementById('ai-chat-window');
-    const chatHistory = document.getElementById('chat-history');
-    const chatInput = document.getElementById('chat-input');
-    const sendChatBtn = document.getElementById('send-chat-btn');
-
-    openChatBtn.addEventListener('click', () => {
-        aiChatWindow.classList.remove('hidden');
-        chatInput.focus();
-    });
-    closeChatBtn.addEventListener('click', () => aiChatWindow.classList.add('hidden'));
-    sendChatBtn.addEventListener('click', sendChatMessage);
-    chatInput.addEventListener('keypress', (event) => {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendChatMessage();
-        }
-    });
-
-    // --- Lógica del Panel de Configuración ---
-    const settingsBtn = document.getElementById('settings-btn');
-    const settingsPanel = document.getElementById('settings-panel');
-    const saveSettingsBtn = document.getElementById('save-settings');
-    const cancelSettingsBtn = document.getElementById('cancel-settings');
-
-    settingsBtn.addEventListener('click', () => settingsPanel.classList.toggle('show'));
-    saveSettingsBtn.addEventListener('click', () => {
-        settings.dogWeight = parseFloat(document.getElementById('dog-weight-input').value) || 20;
-        settings.planDuration = parseInt(document.getElementById('plan-duration-input').value) || 30;
-        settings.currentDay = parseInt(document.getElementById('current-day-input').value) || 0;
-        settings.theme = document.getElementById('theme-select').value;
+    function updateProgress() {
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        // El día actual es settings.currentDay + 1
+        const percentage = ((settings.currentDay + 1) / settings.planDuration) * 100;
         
-        if (settings.currentDay > settings.planDuration) {
-            settings.currentDay = settings.planDuration;
-        }
+        progressBar.style.width = `${Math.min(percentage, 100)}%`;
+        progressText.textContent = `${settings.currentDay + 1} de ${settings.planDuration} días`;
         
-        saveSettings();
-        updateUIWithSettings();
-        updateProgress();
-        renderCalendar();
-        settingsPanel.classList.remove('show');
-    });
-    cancelSettingsBtn.addEventListener('click', () => {
-        updateUIWithSettings(); // Restaura los valores visuales a los guardados
-        settingsPanel.classList.remove('show');
-    });
+        const startDate = new Date(settings.startDate);
+        const currentDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + settings.planDuration - 1);
 
-    function appendMessage(text, sender) {
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add(`${sender}-message`);
-        messageDiv.innerHTML = text;
-        chatHistory.appendChild(messageDiv);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
+        document.getElementById('start-date').textContent = formatDate(startDate);
+        document.getElementById('current-date').textContent = formatDate(currentDate);
+        document.getElementById('end-date').textContent = formatDate(endDate);
+    }
+
+    function formatDate(date) {
+        return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
     }
     
+    // --- LÓGICA DEL CHAT ---
     async function sendChatMessage() {
         const userText = chatInput.value.trim();
         if (!userText) return;
+        
+        if (!settings.apiKey) {
+            appendMessage('Por favor, añade tu clave API de Gemini en el panel de configuración (<i class="fas fa-cog"></i>) para usar el chat.', 'ai');
+            return;
+        }
 
         appendMessage(userText, 'user');
         chatInput.value = '';
@@ -1330,9 +1249,7 @@
         `;
 
         try {
-            const apiKey = ""; // Dejar en blanco
-            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${settings.apiKey}`;
             const payload = { contents: [{ parts: [{ text: systemPrompt }] }] };
 
             const response = await fetch(apiUrl, {
@@ -1347,31 +1264,77 @@
             const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
             
             chatHistory.removeChild(loaderContainer);
-            
-            if (text) {
-                appendMessage(text, 'ai');
-            } else {
-                appendMessage('No se pudo obtener una respuesta. Inténtelo de nuevo.', 'ai');
-            }
-
+            appendMessage(text || 'No se pudo obtener una respuesta. Inténtelo de nuevo.', 'ai');
         } catch (error) {
             console.error("Error al llamar a la API de Gemini:", error);
             chatHistory.removeChild(loaderContainer);
-            appendMessage('Ocurrió un error de conexión. Por favor, inténtelo más tarde.', 'ai');
+            appendMessage('Ocurrió un error de conexión o la clave API no es válida. Por favor, verifícala e inténtalo más tarde.', 'ai');
         }
     }
-
-    // Inicialización al cargar la página
+    
+    function appendMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add(`${sender}-message`);
+        messageDiv.innerHTML = text;
+        chatHistory.appendChild(messageDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+    
+    // --- INICIALIZACIÓN Y EVENT LISTENERS ---
     document.addEventListener('DOMContentLoaded', () => {
+        // Cargar todo
         loadSettings();
-        
         const lastRecipe = localStorage.getItem('lastViewedRecipe');
         showRecipe(lastRecipe ? parseInt(lastRecipe) : 1);
-        
         renderCalendar();
+        
+        // --- Event Listeners ---
+        // Chat
+        document.getElementById('open-chat-bubble').addEventListener('click', () => {
+            document.getElementById('ai-chat-window').classList.remove('hidden');
+            document.getElementById('chat-input').focus();
+        });
+        document.getElementById('close-chat-btn').addEventListener('click', () => document.getElementById('ai-chat-window').classList.add('hidden'));
+        document.getElementById('send-chat-btn').addEventListener('click', sendChatMessage);
+        document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
+        
+        // Configuración
+        document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('settings-panel').classList.toggle('show'));
+        document.getElementById('cancel-settings').addEventListener('click', () => {
+            updateUIWithSettings();
+            document.getElementById('settings-panel').classList.remove('show');
+        });
+        document.getElementById('save-settings').addEventListener('click', () => {
+            settings.dogWeight = parseFloat(document.getElementById('dog-weight-input').value) || 20;
+            settings.planDuration = parseInt(document.getElementById('plan-duration-input').value) || 30;
+            settings.startDate = document.getElementById('start-date-input').value;
+            settings.theme = document.getElementById('theme-select').value;
+            settings.apiKey = document.getElementById('api-key-input').value.trim();
+            
+            updateCurrentDay();
+            saveSettings();
+            updateUIWithSettings();
+            updateProgress();
+            renderCalendar();
+            document.getElementById('settings-panel').classList.remove('show');
+        });
+
+        // Calendario
+        document.getElementById('prev-week').addEventListener('click', () => {
+            if (currentWeekOffset > 0) {
+                currentWeekOffset--;
+                renderCalendar();
+            }
+        });
+        document.getElementById('next-week').addEventListener('click', () => {
+            if (((currentWeekOffset + 1) * 7) < settings.planDuration) {
+                currentWeekOffset++;
+                renderCalendar();
+            }
+        });
+        document.querySelector('.close-details').addEventListener('click', () => document.getElementById('day-details').classList.remove('active'));
     });
 </script>
-
 </body>
 </html>
 
