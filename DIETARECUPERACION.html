@@ -704,6 +704,8 @@
             cursor: pointer;
             font-weight: 500;
             transition: var(--transition);
+            position: relative;
+            overflow: hidden;
         }
 
         .settings-panel .save-btn {
@@ -713,6 +715,26 @@
 
         .settings-panel .save-btn:hover {
             background-color: #218838;
+        }
+
+        .settings-panel .save-btn.saving {
+            background-color: #218838;
+            pointer-events: none;
+        }
+
+        .settings-panel .save-btn.saving i {
+            animation: spin 1s linear infinite;
+        }
+
+        .settings-panel .save-btn.saved {
+            background-color: var(--success-color);
+        }
+
+        .settings-panel .save-btn.saved::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            margin-left: 5px;
         }
 
         .settings-panel .cancel-btn {
@@ -815,6 +837,54 @@
             .meal-card h3 { font-size: 1.2rem; }
             .spice-section { flex-direction: column; }
         }
+
+        /* Animaciones adicionales para la API */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .api-saved {
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        .api-error {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        /* Indicador de API guardada */
+        .api-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            align-items: center;
+            background-color: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+        }
+
+        .api-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .api-indicator i {
+            margin-right: 5px;
+        }
     </style>
 </head>
 <body>
@@ -838,7 +908,7 @@
             
             <div id="recipe-display" role="tabpanel" aria-live="polite"></div>
 
-            <h2><i class="fas fa-list-ul icon"></i>Instrucciones Clave para la Dieta</h2>
+            <h2><i class="fas fa-list-ul icon"></i>Indicaciones</h2>
             <div class="instructions">
                 <ul>
                     <li><strong>Duración:</strong> Siga este plan durante los <span id="plan-duration">30</span> días del tratamiento.</li>
@@ -933,7 +1003,7 @@
     <div id="ai-chat-window" class="ai-chat-window hidden" role="dialog" aria-labelledby="chat-title">
         <div class="ai-chat-header">
             <h3 id="chat-title"><i class="fas fa-robot"></i> Asistente de Cuidados</h3>
-            <button id="close-chat-btn" class="chat-close-btn" aria-label="Cerrar chat">&times;</button>
+            <button id="close-chat-btn" class="chat-close-btn" aria-label="Cerrar chat">×</button>
         </div>
         <div id="chat-history" class="chat-history" aria-live="polite">
             <div class="ai-message">
@@ -960,6 +1030,9 @@
 
     <!-- Panel de configuración -->
     <div id="settings-panel" class="settings-panel">
+        <div class="api-indicator" id="api-indicator">
+            <i class="fas fa-check-circle"></i> API guardada
+        </div>
         <h3><i class="fas fa-sliders-h"></i> Configuración</h3>
         <div class="form-group">
             <label for="dog-weight-input">Peso del perro (kg):</label>
@@ -982,7 +1055,7 @@
             </select>
         </div>
          <div class="form-group">
-            <label for="api-key-input">Clave API de Gemini:</label>
+            <label for="api-key-input">Clave de chat:</label>
             <input type="password" id="api-key-input" placeholder="Pega tu clave aquí">
         </div>
         <div class="btn-group">
@@ -1001,12 +1074,12 @@
     // Datos de las recetas
     const recipes = {
         1: {
-            title: "Comida 1: Potencia de Hígado y Res",
+            title: "Comida 1: Hígado y Res",
             description: "El hígado es el alimento estrella para la anemia por su altísimo contenido de hierro y vitaminas B.",
             ingredients: ["<strong>150g</strong> de Hígado de res (cocido)", "<strong>150g</strong> de Carne molida de res (magra, cocida)", "<strong>100g</strong> de Arroz blanco (bien cocido)", "<strong>50g</strong> de Espinacas (cocidas y picadas)"]
         },
         2: {
-            title: "Comida 2: Festín de Pollo y Huevo",
+            title: "Comida 2: Pollo y Huevo",
             description: "Proteína de alta calidad y fácil digestión, con el poder de la yema de huevo.",
             ingredients: ["<strong>200g</strong> de Pechuga de pollo (cocida y desmenuzada)", "<strong>1 Huevo</strong> duro (cocido y picado)", "<strong>100g</strong> de Camote (papa dulce) (hervido y hecho puré)", "<strong>50g</strong> de Zanahoria (cocida y rallada)"]
         },
@@ -1016,12 +1089,12 @@
             ingredients: ["<strong>200g</strong> de Corazón de res (bien cocido y picado finamente)", "<strong>100g</strong> de Lentejas (muy bien cocidas)", "<strong>100g</strong> de Calabaza (ayote) (cocida y hecha puré)", "<strong>50g</strong> de Brócoli (cocido al vapor)"]
         },
         4: {
-            title: "Comida 4: Sorpresa de Pescado",
+            title: "Comida 4: Pescado",
             description: "Las sardinas aportan Omega-3, que es un excelente antiinflamatorio natural.",
             ingredients: ["<strong>1 Lata</strong> de Sardinas (en agua, sin sal)", "<strong>150g</strong> de Pollo molido (cocido)", "<strong>100g</strong> de Papa (cocida y machacada)", "<strong>50g</strong> de Chícharos (guisantes) (cocidos)"]
         },
         5: {
-            title: "Comida 5: Caldo Sustancioso",
+            title: "Comida 5: Caldo",
             description: "Ideal para días con poco apetito. Hidrata y nutre de forma suave.",
             ingredients: ["<strong>1 Taza</strong> de Caldo de hueso (casero, sin sal)", "<strong>200g</strong> de Muslos de pollo (cocidos y desmenuzados)", "<strong>100g</strong> de Arroz (sobre-cocido en el caldo)", "<strong>50g</strong> de Apio y Zanahoria (muy finos y cocidos)"]
         }
@@ -1304,19 +1377,73 @@
             updateUIWithSettings();
             document.getElementById('settings-panel').classList.remove('show');
         });
-        document.getElementById('save-settings').addEventListener('click', () => {
-            settings.dogWeight = parseFloat(document.getElementById('dog-weight-input').value) || 20;
-            settings.planDuration = parseInt(document.getElementById('plan-duration-input').value) || 30;
-            settings.startDate = document.getElementById('start-date-input').value;
-            settings.theme = document.getElementById('theme-select').value;
-            settings.apiKey = document.getElementById('api-key-input').value.trim();
+        
+        // Evento para guardar configuración con animaciones
+        document.getElementById('save-settings').addEventListener('click', function() {
+            const saveBtn = this;
+            const apiInput = document.getElementById('api-key-input');
+            const apiIndicator = document.getElementById('api-indicator');
             
-            updateCurrentDay();
-            saveSettings();
-            updateUIWithSettings();
-            updateProgress();
-            renderCalendar();
-            document.getElementById('settings-panel').classList.remove('show');
+            // Animación de guardado
+            saveBtn.classList.add('saving');
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+            saveBtn.disabled = true;
+            
+            // Simular tiempo de guardado para mostrar la animación
+            setTimeout(() => {
+                // Obtener valores
+                settings.dogWeight = parseFloat(document.getElementById('dog-weight-input').value) || 20;
+                settings.planDuration = parseInt(document.getElementById('plan-duration-input').value) || 30;
+                settings.startDate = document.getElementById('start-date-input').value;
+                settings.theme = document.getElementById('theme-select').value;
+                const newApiKey = document.getElementById('api-key-input').value.trim();
+                
+                // Verificar si se proporcionó una API key
+                if (newApiKey && newApiKey !== settings.apiKey) {
+                    settings.apiKey = newApiKey;
+                    
+                    // Animación de éxito para API
+                    apiIndicator.classList.add('show');
+                    saveBtn.classList.remove('saving');
+                    saveBtn.classList.add('saved');
+                    saveBtn.innerHTML = 'Guardado';
+                    
+                    // Añadir clase de animación al contenedor del chat
+                    document.getElementById('ai-chat-window').classList.add('api-saved');
+                    
+                    // Mostrar notificación específica para API
+                    showNotification('¡Clave API guardada correctamente! El asistente está listo para usarse.', 'success');
+                    
+                    // Abrir el chat automáticamente
+                    setTimeout(() => {
+                        document.getElementById('ai-chat-window').classList.remove('hidden');
+                        appendMessage('¡Clave API guardada correctamente! Ahora puedes preguntarme sobre el plan nutricional.', 'ai');
+                        document.getElementById('chat-input').focus();
+                    }, 1000);
+                    
+                    // Quitar animaciones después de un tiempo
+                    setTimeout(() => {
+                        apiIndicator.classList.remove('show');
+                        saveBtn.classList.remove('saved');
+                        document.getElementById('ai-chat-window').classList.remove('api-saved');
+                        saveBtn.innerHTML = 'Guardar';
+                        saveBtn.disabled = false;
+                    }, 3000);
+                } else {
+                    // Guardado normal sin cambios en API
+                    updateCurrentDay();
+                    saveSettings();
+                    updateUIWithSettings();
+                    updateProgress();
+                    renderCalendar();
+                    document.getElementById('settings-panel').classList.remove('show');
+                    
+                    // Restaurar botón
+                    saveBtn.classList.remove('saving');
+                    saveBtn.innerHTML = 'Guardar';
+                    saveBtn.disabled = false;
+                }
+            }, 1500); // 1.5 segundos para mostrar la animación
         });
 
         // Calendario
@@ -1335,6 +1462,6 @@
         document.querySelector('.close-details').addEventListener('click', () => document.getElementById('day-details').classList.remove('active'));
     });
 </script>
+
 </body>
 </html>
-
