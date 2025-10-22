@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plan Nutricional Interactivo para Perros</title>
+    <meta name="description" content="Plan nutricional para la recuperación de caninos con anemia por Ehrlichia">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #005a9c;
+            --secondary-color: #007bff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --light-color: #f8f9fa;
+            --dark-color: #343a40;
+            --gray-color: #6c757d;
+            --border-radius: 12px;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            line-height: 1.6;
+            background-color: #f9f9f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            background-color: #ffffff;
+            border-radius: var(--border-radius);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .header {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            padding: 25px 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 26px;
+        }
+
+        .header p {
+            margin: 5px 0 0;
+            font-size: 18px;
+            font-weight: 300;
+        }
+
+        .header .dog-icon {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 24px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .recipe-nav {
+            display: flex;
+            justify-content: space-around;
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .recipe-nav button {
+            background-color: #ddd;
+            border: none;
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: var(--transition);
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .recipe-nav button:hover {
+            background-color: #ccc;
+        }
+
+        .recipe-nav button.active {
+            background-color: var(--primary-color);
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .recipe-nav button:focus {
+            outline: 3px solid rgba(0, 90, 156, 0.5);
+            outline-offset: 2px;
+        }
+
+        #recipe-display {
+            min-height: 250px;
+        }
+
+        h2 {
+            color: var(--primary-color);
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 8px;
+            margin-top: 30px;
+            position: relative;
+        }
+
+        h2 .icon {
+            margin-right: 10px;
+        }
+
+        .meal-card {
+            background-color: #fdfdfd;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .meal-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 5px;
+            height: 100%;
+            background-color: var(--primary-color);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .meal-card h3 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.4rem;
+        }
+
+        .meal-card ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .meal-card ul li {
+            position: relative;
+            padding-left: 25px;
+            margin-bottom: 8px;
+        }
+
+        .meal-card ul li::before {
+            content: '🐾';
+            position: absolute;
+            left: 0;
+            top: 0;
+            color: var(--primary-color);
+        }
+
+        .spice-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .spice-list {
+            flex: 1;
+            min-width: 250px;
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .allowed {
+            background-color: #e6f7f0;
+            border: 1px solid #b7e4d0;
+        }
+
+        .prohibited {
+            background-color: #fdeaea;
+            border: 1px solid #f8c7c7;
+        }
+
+        .allowed h3 { 
+            color: #00642e;
+            display: flex;
+            align-items: center;
+        }
+        
+        .allowed h3 i {
+            margin-right: 8px;
+        }
+
+        .prohibited h3 { 
+            color: var(--danger-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .prohibited h3 i {
+            margin-right: 8px;
+        }
+
+        .prohibited li { 
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+        }
+        
+        .prohibited li::before {
+            content: '✖';
+            color: var(--danger-color);
+            margin-right: 8px;
+        }
+
+        .instructions ul {
+            list-style-type: disc;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 10px;
+        }
+        
+        /* --- ESTILOS CALENDARIO NUEVO --- */
+        .calendar-container {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        .calendar-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            font-size: 14px;
+        }
+        .calendar-table th, .calendar-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            position: relative;
+        }
+        .calendar-table th {
+            background-color: #f2f2f2;
+            color: var(--dark-color);
+            font-weight: 600;
+        }
+        .calendar-table td {
+            height: 80px;
+            vertical-align: top;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .calendar-table td:hover {
+            background-color: #f0f8ff;
+        }
+        .calendar-table .day-number {
+            font-weight: bold;
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+        .calendar-table .meal-type {
+            font-size: 13px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 5px;
+            font-weight: 500;
+        }
+        .calendar-table .meal-1 { background-color: #e3f2fd; color: #0d47a1; }
+        .calendar-table .meal-2 { background-color: #e8f5e9; color: #2e7d32; }
+        .calendar-table .meal-3 { background-color: #fff3e0; color: #e65100; }
+        .calendar-table .meal-4 { background-color: #f3e5f5; color: #6a1b9a; }
+        .calendar-table .meal-5 { background-color: #e0f7fa; color: #006064; }
+
+        .calendar-table .current-day {
+            background-color: rgba(0, 90, 156, 0.1);
+            font-weight: bold;
+            border: 2px solid var(--primary-color);
+        }
+        .calendar-table .current-day .day-number {
+            color: var(--primary-color);
+            font-size: 20px;
+        }
+        .calendar-table .completed-day {
+            background-color: rgba(40, 167, 69, 0.1);
+        }
+        .calendar-table .completed-day::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            color: var(--success-color);
+            font-size: 14px;
+        }
+        .calendar-table .future-day { opacity: 0.7; }
+
+        .calendar-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .calendar-controls button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+        }
+        .calendar-controls button:hover { background-color: #004d87; }
+        .calendar-controls button:disabled { background-color: #ccc; cursor: not-allowed;}
+        .calendar-controls button i { margin: 0 5px; }
+        .calendar-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dark-color);
+        }
+        .calendar-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+        .calendar-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        .calendar-legend-color {
+            width: 16px;
+            height: 16px;
+            border-radius: 4px;
+        }
+        .day-details {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+            display: none;
+        }
+        .day-details.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        .day-details h3 { margin-top: 0; color: var(--primary-color); display: flex; align-items: center; }
+        .day-details h3 i { margin-right: 8px; }
+        .day-details .recipe-details { background-color: white; padding: 12px; border-radius: 6px; margin-top: 10px; }
+        .day-details .recipe-details h4 { margin-top: 0; color: var(--dark-color); font-size: 16px; }
+        .day-details .recipe-details ul { list-style-type: none; padding-left: 0; margin-top: 8px; }
+        .day-details .recipe-details li { position: relative; padding-left: 25px; margin-bottom: 5px; }
+        .day-details .recipe-details li::before { content: '🐾'; position: absolute; left: 0; top: 0; color: var(--primary-color); }
+        .close-details { background: none; border: none; color: var(--gray-color); font-size: 20px; cursor: pointer; float: right; transition: var(--transition); }
+        .close-details:hover { color: var(--danger-color); }
+        
+        /* --- ESTILOS ASISTENTE DE IA TIPO CHAT --- */
+        .chat-bubble {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .chat-bubble:hover {
+            transform: scale(1.1);
+            background-color: var(--secondary-color);
+        }
+
+        .ai-chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 25px;
+            width: 90%;
+            max-width: 370px;
+            height: 70vh;
+            max-height: 500px;
+            background-color: #f0f2f5;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 999;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: var(--transition);
+        }
+
+        .ai-chat-window.hidden {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+            pointer-events: none;
+        }
+
+        .ai-chat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: var(--primary-color);
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .ai-chat-header h3 {
+            margin: 0;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .ai-chat-header h3 i {
+            margin-right: 8px;
+        }
+
+        .chat-close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 0 5px;
+            transition: var(--transition);
+        }
+        
+        .chat-close-btn:hover {
+            transform: rotate(90deg);
+        }
+
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .user-message, .ai-message {
+            padding: 10px 15px;
+            border-radius: 18px;
+            max-width: 80%;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .user-message {
+            background-color: var(--secondary-color);
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .ai-message {
+            background-color: #fff;
+            color: #333;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e5e5e5;
+        }
+
+        .ai-message p {
+            margin: 0;
+        }
+
+        .chat-input-area {
+            display: flex;
+            padding: 10px;
+            background-color: #fff;
+            border-top: 1px solid #ddd;
+            flex-shrink: 0;
+        }
+
+        .chat-input-area input {
+            flex-grow: 1;
+            border: none;
+            padding: 10px;
+            border-radius: 20px;
+            background-color: #f0f2f5;
+            outline: none;
+            font-size: 16px;
+        }
+
+        .chat-input-area button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            transition: var(--transition);
+        }
+        
+        .chat-input-area button:hover {
+            color: var(--secondary-color);
+            transform: scale(1.1);
+        }
+
+        .chat-input-area button svg, .chat-input-area button i {
+            width: 24px;
+            height: 24px;
+        }
+
+        .loader-container {
+            align-self: flex-start;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .loader {
+            border: 3px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 3px solid var(--primary-color);
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Notificaciones */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            z-index: 1001;
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            border-left: 4px solid var(--success-color);
+        }
+
+        .notification.error {
+            border-left: 4px solid var(--danger-color);
+        }
+
+        .notification.info {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .notification i {
+            margin-right: 10px;
+            font-size: 20px;
+        }
+
+        .notification.success i { color: var(--success-color); }
+        .notification.error i { color: var(--danger-color); }
+        .notification.info i { color: var(--primary-color); }
+
+        /* Botón de configuración */
+        .settings-btn {
+            position: fixed;
+            bottom: 25px;
+            left: 25px;
+            width: 50px;
+            height: 50px;
+            background-color: #6c757d;
+            color: white;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .settings-btn:hover {
+            background-color: #5a6268;
+            transform: scale(1.1);
+        }
+
+        /* Panel de configuración */
+        .settings-panel {
+            position: fixed;
+            bottom: 90px;
+            left: 25px;
+            width: 90%;
+            max-width: 320px;
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 999;
+            padding: 20px;
+            transition: var(--transition);
+            transform: scale(0.95) translateY(10px);
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .settings-panel.show {
+            transform: scale(1) translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .settings-panel h3 {
+            margin-top: 0;
+            color: var(--dark-color);
+            display: flex;
+            align-items: center;
+        }
+        
+        .settings-panel h3 i {
+            margin-right: 10px;
+        }
+
+        .settings-panel .form-group {
+            margin-bottom: 15px;
+        }
+
+        .settings-panel label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: var(--dark-color);
+        }
+
+        .settings-panel input, .settings-panel select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .settings-panel .btn-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+
+        .settings-panel button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: var(--transition);
+        }
+
+        .settings-panel .save-btn {
+            background-color: var(--success-color);
+            color: white;
+        }
+
+        .settings-panel .save-btn:hover {
+            background-color: #218838;
+        }
+
+        .settings-panel .cancel-btn {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .settings-panel .cancel-btn:hover {
+            background-color: #5a6268;
+        }
+
+        /* Sección de progreso */
+        .progress-section {
+            margin-top: 25px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .progress-header h3 { margin: 0; color: var(--dark-color); font-size: 18px; }
+        .progress-text { font-weight: 500; color: var(--gray-color); }
+
+        .progress-bar-container {
+            height: 20px;
+            background-color: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--success-color);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background-image: linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.15) 25%, transparent 25%,
+                transparent 50%, rgba(255, 255, 255, 0.15) 50%,
+                rgba(255, 255, 255, 0.15) 75%, transparent 75%,
+                transparent
+            );
+            background-size: 30px 30px;
+            animation: progress-bar-stripes 1s linear infinite;
+        }
+
+        @keyframes progress-bar-stripes {
+            0% { background-position: 30px 0; }
+            100% { background-position: 0 0; }
+        }
+        
+        .progress-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--gray-color);
+        }
+
+        /* Mejoras de accesibilidad */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
+        }
+
+        /* Diseño responsivo */
+        @media (max-width: 768px) {
+            .container { margin: 10px auto; }
+            .header { padding: 15px 20px; }
+            .header h1 { font-size: 22px; }
+            .content { padding: 20px; }
+            .calendar-table { font-size: 12px; }
+            .calendar-table th, .calendar-table td { padding: 5px; }
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 10px; }
+            .recipe-nav button { padding: 10px 12px; font-size: 12px; }
+            .meal-card h3 { font-size: 1.2rem; }
+            .spice-section { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <div class="dog-icon"><i class="fas fa-dog"></i></div>
+            <h1>Plan Nutricional de Apoyo</h1>
+            <p>Recuperación para Canino de <span id="dog-weight">20</span> kg</p>
+        </div>
+        <div class="content">
+            
+            <h2><i class="fas fa-utensils icon"></i>Recetas de Recuperación</h2>
+            <div class="recipe-nav" role="tablist" aria-label="Recetas de recuperación">
+                <button id="btn-1" class="recipe-btn" onclick="showRecipe(1)" role="tab" aria-selected="true" aria-controls="recipe-1">Receta 1</button>
+                <button id="btn-2" class="recipe-btn" onclick="showRecipe(2)" role="tab" aria-selected="false" aria-controls="recipe-2">Receta 2</button>
+                <button id="btn-3" class="recipe-btn" onclick="showRecipe(3)" role="tab" aria-selected="false" aria-controls="recipe-3">Receta 3</button>
+                <button id="btn-4" class="recipe-btn" onclick="showRecipe(4)" role="tab" aria-selected="false" aria-controls="recipe-4">Receta 4</button>
+                <button id="btn-5" class="recipe-btn" onclick="showRecipe(5)" role="tab" aria-selected="false" aria-controls="recipe-5">Receta 5</button>
+            </div>
+            
+            <div id="recipe-display" role="tabpanel" aria-live="polite"></div>
+
+            <h2><i class="fas fa-list-ul icon"></i>Instrucciones Clave para la Dieta</h2>
+            <div class="instructions">
+                <ul>
+                    <li><strong>Duración:</strong> Siga este plan durante los <span id="plan-duration">30</span> días del tratamiento.</li>
+                    <li><strong>Cantidad Total Diaria:</strong> Aprox. <strong id="daily-amount">600 a 800 gramos</strong> (ajuste según apetito).</li>
+                    <li><strong>Frecuencia:</strong> Divida la ración total en <strong>2 o 3 comidas pequeñas</strong> al día.</li>
+                    <li><strong>Preparación:</strong> Todos los ingredientes deben estar bien cocidos (hervidos o al vapor).</li>
+                    <li><strong>Importante:</strong> No añada sal, ajo, cebolla ni condimentos comerciales.</li>
+                    <li><strong>Agua:</strong> Asegúrese de que siempre tenga agua fresca y limpia disponible.</li>
+                </ul>
+            </div>
+
+            <h2><i class="fas fa-pepper-hot icon"></i>Sazonadores: Permitidos y Prohibidos</h2>
+            <div class="spice-section">
+                <div class="spice-list allowed">
+                    <h3><i class="fas fa-check-circle"></i> Permitidos (en Pizcas)</h3>
+                    <ul>
+                        <li><strong>Cúrcuma:</strong> Una pizca.</li>
+                        <li><strong>Perejil fresco:</strong> Muy poco, bien picado.</li>
+                        <li><strong>Jengibre:</strong> Una pizca mínima.</li>
+                        <li><strong>Aceite de Oliva (extra virgen):</strong> 1 cucharadita sobre la comida ya servida.</li>
+                    </ul>
+                </div>
+                <div class="spice-list prohibited">
+                    <h3><i class="fas fa-times-circle"></i> ¡TOTALMENTE PROHIBIDOS!</h3>
+                    <ul>
+                        <li>CEBOLLA (en todas sus formas)</li>
+                        <li>AJO (en todas sus formas)</li>
+                        <li>SAL (de mesa)</li>
+                        <li>Pimienta / Chiles</li>
+                        <li>Nuez moscada</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div id="calendar-section">
+                <h2><i class="fas fa-calendar-alt icon"></i>Calendario Nutricional</h2>
+                <div class="calendar-controls">
+                    <button id="prev-week" aria-label="Semana anterior"><i class="fas fa-chevron-left"></i> Anterior</button>
+                    <div class="calendar-title" id="calendar-title">Plan de 30 días</div>
+                    <button id="next-week" aria-label="Siguiente semana">Siguiente <i class="fas fa-chevron-right"></i></button>
+                </div>
+                <div class="calendar-container">
+                    <table class="calendar-table">
+                        <thead>
+                            <tr>
+                                <th>Lunes</th>
+                                <th>Martes</th>
+                                <th>Miércoles</th>
+                                <th>Jueves</th>
+                                <th>Viernes</th>
+                                <th>Sábado</th>
+                                <th>Domingo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calendar-body">
+                            <!-- Las filas del calendario se generarán con JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="calendar-legend">
+                    <div class="calendar-legend-item"><div class="calendar-legend-color" style="background-color: #e3f2fd;"></div><span>Comida 1</span></div>
+                    <div class="calendar-legend-item"><div class="calendar-legend-color" style="background-color: #e8f5e9;"></div><span>Comida 2</span></div>
+                    <div class="calendar-legend-item"><div class="calendar-legend-color" style="background-color: #fff3e0;"></div><span>Comida 3</span></div>
+                    <div class="calendar-legend-item"><div class="calendar-legend-color" style="background-color: #f3e5f5;"></div><span>Comida 4</span></div>
+                    <div class="calendar-legend-item"><div class="calendar-legend-color" style="background-color: #e0f7fa;"></div><span>Comida 5</span></div>
+                </div>
+                 <div id="day-details" class="day-details">
+                    <button class="close-details" aria-label="Cerrar detalles"><i class="fas fa-times"></i></button>
+                    <h3 id="day-details-title"><i class="fas fa-info-circle"></i> Detalles del Día</h3>
+                    <div class="recipe-details" id="recipe-details-content">
+                        <!-- Los detalles de la receta se cargarán dinámicamente -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="progress-section">
+                <div class="progress-header">
+                    <h3>Progreso del Plan</h3>
+                    <span class="progress-text" id="progress-text">0 de 30 días</span>
+                </div>
+                <div class="progress-bar-container">
+                    <div id="progress-bar" class="progress-bar" style="width: 0%"></div>
+                </div>
+                <div class="progress-info">
+                    <span>Inicio: <span id="start-date"></span></span>
+                    <span>Actual: <span id="current-date"></span></span>
+                    <span>Final: <span id="end-date"></span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Asistente de IA en ventana de chat -->
+    <div id="ai-chat-window" class="ai-chat-window hidden" role="dialog" aria-labelledby="chat-title">
+        <div class="ai-chat-header">
+            <h3 id="chat-title"><i class="fas fa-robot"></i> Asistente de Cuidados</h3>
+            <button id="close-chat-btn" class="chat-close-btn" aria-label="Cerrar chat">&times;</button>
+        </div>
+        <div id="chat-history" class="chat-history" aria-live="polite">
+            <div class="ai-message">
+                <p>¡Hola! Soy tu asistente de cuidados. ¿En qué puedo ayudarte hoy? Puedes pedirme recetas, consejos de hidratación, o preguntarme sobre ingredientes.</p>
+            </div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Escribe tu pregunta..." aria-label="Escribe tu pregunta">
+            <button id="send-chat-btn" aria-label="Enviar mensaje">
+                <i class="fas fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Burbuja para abrir el chat -->
+    <button id="open-chat-bubble" class="chat-bubble" aria-label="Abrir asistente de cuidados">
+        <i class="fas fa-comments"></i>
+    </button>
+
+    <!-- Botón de configuración -->
+    <button id="settings-btn" class="settings-btn" aria-label="Configuración">
+        <i class="fas fa-cog"></i>
+    </button>
+
+    <!-- Panel de configuración -->
+    <div id="settings-panel" class="settings-panel">
+        <h3><i class="fas fa-sliders-h"></i> Configuración</h3>
+        <div class="form-group">
+            <label for="dog-weight-input">Peso del perro (kg):</label>
+            <input type="number" id="dog-weight-input" min="1" max="100" step="0.5" value="20">
+        </div>
+        <div class="form-group">
+            <label for="plan-duration-input">Duración del plan (días):</label>
+            <input type="number" id="plan-duration-input" min="1" max="365" value="30">
+        </div>
+        <div class="form-group">
+            <label for="current-day-input">Día actual del plan:</label>
+            <input type="number" id="current-day-input" min="0" max="30" value="0">
+        </div>
+        <div class="form-group">
+            <label for="theme-select">Tema:</label>
+            <select id="theme-select">
+                <option value="default">Predeterminado</option>
+                <option value="dark">Oscuro</option>
+                <option value="high-contrast">Alto contraste</option>
+            </select>
+        </div>
+        <div class="btn-group">
+            <button id="save-settings" class="save-btn">Guardar</button>
+            <button id="cancel-settings" class="cancel-btn">Cancelar</button>
+        </div>
+    </div>
+
+    <!-- Notificaciones -->
+    <div id="notification" class="notification" role="alert" aria-live="assertive">
+        <i class="fas fa-info-circle"></i>
+        <span id="notification-text"></span>
+    </div>
+
+<script>
+    // Datos de las recetas
+    const recipes = {
+        1: {
+            title: "Comida 1: Hígado y Res",
+            description: "El hígado es el alimento estrella para la anemia por su altísimo contenido de hierro y vitaminas B.",
+            ingredients: ["<strong>150g</strong> de Hígado de res (cocido)", "<strong>150g</strong> de Carne molida de res (magra, cocida)", "<strong>100g</strong> de Arroz blanco (bien cocido)", "<strong>50g</strong> de Espinacas (cocidas y picadas)"]
+        },
+        2: {
+            title: "Comida 2: Pollo y Huevo",
+            description: "Proteína de alta calidad y fácil digestión, con el poder de la yema de huevo.",
+            ingredients: ["<strong>200g</strong> de Pechuga de pollo (cocida y desmenuzada)", "<strong>1 Huevo</strong> duro (cocido y picado)", "<strong>100g</strong> de Camote (papa dulce) (hervido y hecho puré)", "<strong>50g</strong> de Zanahoria (cocida y rallada)"]
+        },
+        3: {
+            title: "Comida 3: Corazón y Lentejas",
+            description: "El corazón es rico en taurina y hierro. Las lentejas aportan hierro de origen vegetal y fibra.",
+            ingredients: ["<strong>200g</strong> de Corazón de res (bien cocido y picado finamente)", "<strong>100g</strong> de Lentejas (muy bien cocidas)", "<strong>100g</strong> de Calabaza (ayote) (cocida y hecha puré)", "<strong>50g</strong> de Brócoli (cocido al vapor)"]
+        },
+        4: {
+            title: "Comida 4: Pescado",
+            description: "Las sardinas aportan Omega-3, que es un excelente antiinflamatorio natural.",
+            ingredients: ["<strong>1 Lata</strong> de Sardinas (en agua, sin sal)", "<strong>150g</strong> de Pollo molido (cocido)", "<strong>100g</strong> de Papa (cocida y machacada)", "<strong>50g</strong> de Chícharos (guisantes) (cocidos)"]
+        },
+        5: {
+            title: "Comida 5: Caldo",
+            description: "Ideal para días con poco apetito. Hidrata y nutre de forma suave.",
+            ingredients: ["<strong>1 Taza</strong> de Caldo de hueso (casero, sin sal)", "<strong>200g</strong> de Muslos de pollo (cocidos y desmenuzados)", "<strong>100g</strong> de Arroz (sobre-cocido en el caldo)", "<strong>50g</strong> de Apio y Zanahoria (muy finos y cocidos)"]
+        }
+    };
+
+    const mealPlan = [
+        { day: 1, meal: 1 }, { day: 2, meal: 1 }, { day: 3, meal: 2 }, { day: 4, meal: 2 }, { day: 5, meal: 3 }, { day: 6, meal: 3 }, { day: 7, meal: 1 },
+        { day: 8, meal: 4 }, { day: 9, meal: 4 }, { day: 10, meal: 5 }, { day: 11, meal: 5 }, { day: 12, meal: 2 }, { day: 13, meal: 2 }, { day: 14, meal: 3 },
+        { day: 15, meal: 1 }, { day: 16, meal: 1 }, { day: 17, meal: 4 }, { day: 18, meal: 4 }, { day: 19, meal: 5 }, { day: 20, meal: 5 }, { day: 21, meal: 2 },
+        { day: 22, meal: 3 }, { day: 23, meal: 3 }, { day: 24, meal: 1 }, { day: 25, meal: 1 }, { day: 26, meal: 2 }, { day: 27, meal: 4 }, { day: 28, meal: 5 },
+        { day: 29, meal: 1 }, { day: 30, meal: 1 }
+    ];
+
+    // Variables globales
+    let settings = {
+        dogWeight: 20,
+        planDuration: 30,
+        currentDay: 0,
+        theme: 'default',
+        startDate: new Date().toISOString().split('T')[0] // Guardar solo la fecha
+    };
+
+    // Cargar configuración guardada
+    function loadSettings() {
+        const savedSettings = localStorage.getItem('nutritionPlanSettings');
+        if (savedSettings) {
+            settings = JSON.parse(savedSettings);
+        }
+        // Autocalcular el día actual basado en la fecha de inicio
+        const startDate = new Date(settings.startDate);
+        const today = new Date();
+        today.setHours(0,0,0,0);
+        startDate.setHours(0,0,0,0);
+
+        const diffTime = Math.abs(today - startDate);
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        settings.currentDay = Math.min(diffDays, settings.planDuration);
+        
+        updateUIWithSettings();
+        updateProgress();
+    }
+
+    // Guardar configuración
+    function saveSettings() {
+        localStorage.setItem('nutritionPlanSettings', JSON.stringify(settings));
+        showNotification('Configuración guardada correctamente', 'success');
+    }
+
+    // Actualizar UI con la configuración
+    function updateUIWithSettings() {
+        document.getElementById('dog-weight').textContent = settings.dogWeight;
+        document.getElementById('plan-duration').textContent = settings.planDuration;
+        document.getElementById('dog-weight-input').value = settings.dogWeight;
+        document.getElementById('plan-duration-input').value = settings.planDuration;
+        document.getElementById('current-day-input').value = settings.currentDay;
+        
+        const minAmount = Math.round(settings.dogWeight * 30);
+        const maxAmount = Math.round(settings.dogWeight * 40);
+        document.getElementById('daily-amount').textContent = `${minAmount} a ${maxAmount} gramos`;
+        
+        applyTheme(settings.theme);
+    }
+
+    // Aplicar tema
+    function applyTheme(theme) {
+        document.getElementById('theme-select').value = theme;
+        document.body.className = '';
+        if (theme === 'dark' || theme === 'high-contrast') {
+            document.body.classList.add(theme + '-theme');
+        }
+    }
+    
+    const themeStyles = `
+        body.dark-theme { background-color: #222; color: #ddd; }
+        body.dark-theme .container, body.dark-theme .settings-panel, body.dark-theme .ai-chat-window { background-color: #333; color: #ddd; }
+        body.dark-theme .meal-card, body.dark-theme .spice-list.allowed, body.dark-theme .spice-list.prohibited, body.dark-theme .progress-section, body.dark-theme .recipe-details, body.dark-theme .ai-message { background-color: #444; }
+        body.dark-theme .calendar-table th { background-color: #555;}
+        body.dark-theme .calendar-table td:hover { background-color: #4a4a4a;}
+        body.high-contrast-theme { background-color: #000; color: #fff; }
+        body.high-contrast-theme .container, body.high-contrast-theme .settings-panel { background-color: #000; color: #fff; border: 2px solid #fff; }
+        body.high-contrast-theme h2, body.high-contrast-theme .day-number { color: #fff; }
+    `;
+    const styleSheet = document.createElement("style");
+    styleSheet.innerText = themeStyles;
+    document.head.appendChild(styleSheet);
+
+
+    // Actualizar progreso y fechas
+    function updateProgress() {
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+        const percentage = (settings.currentDay / settings.planDuration) * 100;
+        
+        progressBar.style.width = `${Math.min(percentage, 100)}%`;
+        progressText.textContent = `${settings.currentDay} de ${settings.planDuration} días`;
+        
+        // Actualizar fechas en la barra de progreso
+        const startDate = new Date(settings.startDate);
+        const currentDate = new Date();
+        const endDate = new Date(startDate);
+        endDate.setDate(startDate.getDate() + settings.planDuration - 1);
+
+        document.getElementById('start-date').textContent = formatDate(startDate);
+        document.getElementById('current-date').textContent = formatDate(currentDate);
+        document.getElementById('end-date').textContent = formatDate(endDate);
+    }
+
+    function formatDate(date) {
+        return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+    }
+
+    // Mostrar receta
+    function showRecipe(recipeId) {
+        const recipe = recipes[recipeId];
+        const display = document.getElementById('recipe-display');
+        let html = `<div class="meal-card" id="recipe-${recipeId}" role="region" aria-labelledby="recipe-title-${recipeId}">
+                        <h3 id="recipe-title-${recipeId}">${recipe.title}</h3>
+                        <p>${recipe.description}</p><ul>`;
+        recipe.ingredients.forEach(item => { html += `<li>${item}</li>`; });
+        html += `</ul></div>`;
+        display.innerHTML = html;
+        
+        document.querySelectorAll('.recipe-btn').forEach(btn => {
+            btn.classList.remove('active');
+            btn.setAttribute('aria-selected', 'false');
+        });
+        
+        const activeBtn = document.getElementById(`btn-${recipeId}`);
+        activeBtn.classList.add('active');
+        activeBtn.setAttribute('aria-selected', 'true');
+        
+        localStorage.setItem('lastViewedRecipe', recipeId);
+    }
+
+    // Mostrar notificación
+    function showNotification(message, type = 'info') {
+        const notification = document.getElementById('notification');
+        const notificationText = document.getElementById('notification-text');
+        const icon = notification.querySelector('i');
+        
+        notification.className = 'notification';
+        notification.classList.add(type);
+        
+        if (type === 'success') icon.className = 'fas fa-check-circle';
+        else if (type === 'error') icon.className = 'fas fa-exclamation-circle';
+        else icon.className = 'fas fa-info-circle';
+        
+        notificationText.textContent = message;
+        notification.classList.add('show');
+        
+        setTimeout(() => notification.classList.remove('show'), 3000);
+    }
+
+    // --- Lógica del Calendario Interactivo ---
+    const calendarBody = document.getElementById('calendar-body');
+    const dayDetails = document.getElementById('day-details');
+    const recipeDetailsContent = document.getElementById('recipe-details-content');
+    const dayDetailsTitle = document.getElementById('day-details-title');
+    const closeDetailsBtn = document.querySelector('.close-details');
+    let currentWeek = 0;
+
+    function renderCalendar() {
+        calendarBody.innerHTML = '';
+        const totalWeeks = Math.ceil(settings.planDuration / 7);
+
+        for (let week = 0; week < totalWeeks; week++) {
+            const row = document.createElement('tr');
+            if(week !== currentWeek) row.style.display = 'none';
+
+            for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+                const dayNumber = week * 7 + dayOfWeek + 1;
+                const cell = document.createElement('td');
+                
+                if (dayNumber <= settings.planDuration) {
+                    const mealPlanEntry = mealPlan.find(entry => entry.day === dayNumber);
+                    const mealType = mealPlanEntry ? mealPlanEntry.meal : 0;
+                    
+                    let dayClass = '';
+                    if (dayNumber < settings.currentDay + 1) dayClass = 'completed-day';
+                    else if (dayNumber === settings.currentDay + 1) dayClass = 'current-day';
+                    else dayClass = 'future-day';
+                    
+                    cell.className = dayClass;
+                    cell.innerHTML = `
+                        <div class="day-number">${dayNumber}</div>
+                        <div class="meal-type meal-${mealType}">Comida ${mealType}</div>
+                    `;
+                    cell.addEventListener('click', () => showDayDetails(dayNumber, mealType));
+                } else {
+                    cell.className = 'empty-cell';
+                }
+                row.appendChild(cell);
+            }
+            calendarBody.appendChild(row);
+        }
+        document.getElementById('calendar-title').textContent = `Semana ${currentWeek + 1} de ${totalWeeks}`;
+        document.getElementById('prev-week').disabled = currentWeek === 0;
+        document.getElementById('next-week').disabled = currentWeek === totalWeeks - 1;
+    }
+
+    function showDayDetails(dayNumber, mealType) {
+        const recipe = recipes[mealType];
+        dayDetailsTitle.innerHTML = `<i class="fas fa-info-circle"></i> Detalles del Día ${dayNumber}`;
+        recipeDetailsContent.innerHTML = `
+            <h4>${recipe.title}</h4>
+            <p>${recipe.description}</p>
+            <h5>Ingredientes:</h5>
+            <ul>${recipe.ingredients.map(ingredient => `<li>${ingredient}</li>`).join('')}</ul>
+        `;
+        dayDetails.classList.add('active');
+    }
+    
+    closeDetailsBtn.addEventListener('click', () => dayDetails.classList.remove('active'));
+
+    document.getElementById('prev-week').addEventListener('click', () => {
+        if(currentWeek > 0) {
+            currentWeek--;
+            renderCalendar();
+        }
+    });
+
+    document.getElementById('next-week').addEventListener('click', () => {
+        const totalWeeks = Math.ceil(settings.planDuration / 7);
+        if(currentWeek < totalWeeks - 1) {
+            currentWeek++;
+            renderCalendar();
+        }
+    });
+
+    // --- Lógica del Chat de IA ---
+    const openChatBtn = document.getElementById('open-chat-bubble');
+    const closeChatBtn = document.getElementById('close-chat-btn');
+    const aiChatWindow = document.getElementById('ai-chat-window');
+    const chatHistory = document.getElementById('chat-history');
+    const chatInput = document.getElementById('chat-input');
+    const sendChatBtn = document.getElementById('send-chat-btn');
+
+    openChatBtn.addEventListener('click', () => {
+        aiChatWindow.classList.remove('hidden');
+        chatInput.focus();
+    });
+    closeChatBtn.addEventListener('click', () => aiChatWindow.classList.add('hidden'));
+    sendChatBtn.addEventListener('click', sendChatMessage);
+    chatInput.addEventListener('keypress', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            sendChatMessage();
+        }
+    });
+
+    // --- Lógica del Panel de Configuración ---
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const saveSettingsBtn = document.getElementById('save-settings');
+    const cancelSettingsBtn = document.getElementById('cancel-settings');
+
+    settingsBtn.addEventListener('click', () => settingsPanel.classList.toggle('show'));
+    saveSettingsBtn.addEventListener('click', () => {
+        settings.dogWeight = parseFloat(document.getElementById('dog-weight-input').value) || 20;
+        settings.planDuration = parseInt(document.getElementById('plan-duration-input').value) || 30;
+        settings.currentDay = parseInt(document.getElementById('current-day-input').value) || 0;
+        settings.theme = document.getElementById('theme-select').value;
+        
+        if (settings.currentDay > settings.planDuration) {
+            settings.currentDay = settings.planDuration;
+        }
+        
+        saveSettings();
+        updateUIWithSettings();
+        updateProgress();
+        renderCalendar();
+        settingsPanel.classList.remove('show');
+    });
+    cancelSettingsBtn.addEventListener('click', () => {
+        updateUIWithSettings(); // Restaura los valores visuales a los guardados
+        settingsPanel.classList.remove('show');
+    });
+
+    function appendMessage(text, sender) {
+        const messageDiv = document.createElement('div');
+        messageDiv.classList.add(`${sender}-message`);
+        messageDiv.innerHTML = text;
+        chatHistory.appendChild(messageDiv);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+    }
+    
+    async function sendChatMessage() {
+        const userText = chatInput.value.trim();
+        if (!userText) return;
+
+        appendMessage(userText, 'user');
+        chatInput.value = '';
+
+        const loaderContainer = document.createElement('div');
+        loaderContainer.classList.add('ai-message');
+        loaderContainer.innerHTML = `<div class="loader-container"><div class="loader"></div></div>`;
+        chatHistory.appendChild(loaderContainer);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        
+        const systemPrompt = `
+            Eres un veterinario experto en nutrición canina y actúas como un asistente conversacional. Tu propósito es ayudar al dueño de un perro de ${settings.dogWeight} kg que se recupera de anemia por Ehrlichia.
+            Tus respuestas deben ser seguras, útiles y basadas en el contexto de la recuperación.
+            Las reglas que NUNCA debes romper son:
+            1. No recomiendes NUNCA ingredientes peligrosos como: cebolla, ajo, sal, pimienta, chiles, nuez moscada, azúcar, chocolate, uvas, o condimentos comerciales.
+            2. Si te piden una receta, debe ser altamente palatable, fácil de digerir y densa en nutrientes como hierro y vitaminas B, con ingredientes comunes.
+            3. Si te preguntan por un ingrediente, analiza su seguridad, beneficios, y forma de preparación para un perro convaleciente.
+            4. Mantén un tono amigable, profesional y fácil de entender.
+            5. Responde directamente a la pregunta del usuario. Formatea tus respuestas con párrafos o listas para que sea fácil de leer.
+
+            Aquí está la pregunta del usuario: "${userText}"
+        `;
+
+        try {
+            const apiKey = ""; // Dejar en blanco
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+            const payload = { contents: [{ parts: [{ text: systemPrompt }] }] };
+
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error(`Error en la API: ${response.statusText}`);
+
+            const result = await response.json();
+            const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+            
+            chatHistory.removeChild(loaderContainer);
+            
+            if (text) {
+                appendMessage(text, 'ai');
+            } else {
+                appendMessage('No se pudo obtener una respuesta. Inténtelo de nuevo.', 'ai');
+            }
+
+        } catch (error) {
+            console.error("Error al llamar a la API de Gemini:", error);
+            chatHistory.removeChild(loaderContainer);
+            appendMessage('Ocurrió un error de conexión. Por favor, inténtelo más tarde.', 'ai');
+        }
+    }
+
+    // Inicialización al cargar la página
+    document.addEventListener('DOMContentLoaded', () => {
+        loadSettings();
+        
+        const lastRecipe = localStorage.getItem('lastViewedRecipe');
+        showRecipe(lastRecipe ? parseInt(lastRecipe) : 1);
+        
+        renderCalendar();
+    });
+</script>
+
+</body>
+</html>
+
