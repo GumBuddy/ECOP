@@ -403,6 +403,12 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
             z-index: 1000;
             transition: var(--transition);
+            /* Ocultar por defecto hasta que se guarde la API */
+            display: none;
+        }
+
+        .chat-bubble.visible {
+            display: flex;
         }
 
         .chat-bubble:hover {
@@ -615,7 +621,7 @@
             left: 25px;
             width: 50px;
             height: 50px;
-            background-color: #6c757d;
+            background-color: var(--gray-color);
             color: white;
             border-radius: 50%;
             border: none;
@@ -631,6 +637,11 @@
         .settings-btn:hover {
             background-color: #5a6268;
             transform: scale(1.1);
+        }
+
+        .settings-btn.api-needed {
+            background-color: var(--danger-color);
+            animation: pulse 2s infinite;
         }
 
         /* Panel de configuración */
@@ -738,7 +749,7 @@
         }
 
         .settings-panel .cancel-btn {
-            background-color: #6c757d;
+            background-color: var(--gray-color);
             color: white;
         }
 
@@ -1018,14 +1029,14 @@
         </div>
     </div>
 
-    <!-- Burbuja para abrir el chat -->
+    <!-- Burbuja para abrir el chat (solo visible si hay API guardada) -->
     <button id="open-chat-bubble" class="chat-bubble" aria-label="Abrir asistente de cuidados">
         <i class="fas fa-comments"></i>
     </button>
 
     <!-- Botón de configuración -->
     <button id="settings-btn" class="settings-btn" aria-label="Configuración">
-        <i class="fas fa-cog"></i>
+        <i class="fas fa-sliders-h"></i>
     </button>
 
     <!-- Panel de configuración -->
@@ -1057,6 +1068,9 @@
          <div class="form-group">
             <label for="api-key-input">Clave de chat:</label>
             <input type="password" id="api-key-input" placeholder="Pega tu clave aquí">
+            <small style="color: #6c757d; font-size: 12px; margin-top: 5px; display: block;">
+                Necesitas una clave para activar el asistente de IA
+            </small>
         </div>
         <div class="btn-group">
             <button id="save-settings" class="save-btn">Guardar</button>
@@ -1074,12 +1088,12 @@
     // Datos de las recetas
     const recipes = {
         1: {
-            title: "Comida 1: Hígado y Res",
+            title: "Comida 1: Potencia de Hígado y Res",
             description: "El hígado es el alimento estrella para la anemia por su altísimo contenido de hierro y vitaminas B.",
             ingredients: ["<strong>150g</strong> de Hígado de res (cocido)", "<strong>150g</strong> de Carne molida de res (magra, cocida)", "<strong>100g</strong> de Arroz blanco (bien cocido)", "<strong>50g</strong> de Espinacas (cocidas y picadas)"]
         },
         2: {
-            title: "Comida 2: Pollo y Huevo",
+            title: "Comida 2: Festín de Pollo y Huevo",
             description: "Proteína de alta calidad y fácil digestión, con el poder de la yema de huevo.",
             ingredients: ["<strong>200g</strong> de Pechuga de pollo (cocida y desmenuzada)", "<strong>1 Huevo</strong> duro (cocido y picado)", "<strong>100g</strong> de Camote (papa dulce) (hervido y hecho puré)", "<strong>50g</strong> de Zanahoria (cocida y rallada)"]
         },
@@ -1089,12 +1103,12 @@
             ingredients: ["<strong>200g</strong> de Corazón de res (bien cocido y picado finamente)", "<strong>100g</strong> de Lentejas (muy bien cocidas)", "<strong>100g</strong> de Calabaza (ayote) (cocida y hecha puré)", "<strong>50g</strong> de Brócoli (cocido al vapor)"]
         },
         4: {
-            title: "Comida 4: Pescado",
+            title: "Comida 4: Sorpresa de Pescado",
             description: "Las sardinas aportan Omega-3, que es un excelente antiinflamatorio natural.",
             ingredients: ["<strong>1 Lata</strong> de Sardinas (en agua, sin sal)", "<strong>150g</strong> de Pollo molido (cocido)", "<strong>100g</strong> de Papa (cocida y machacada)", "<strong>50g</strong> de Chícharos (guisantes) (cocidos)"]
         },
         5: {
-            title: "Comida 5: Caldo",
+            title: "Comida 5: Caldo Sustancioso",
             description: "Ideal para días con poco apetito. Hidrata y nutre de forma suave.",
             ingredients: ["<strong>1 Taza</strong> de Caldo de hueso (casero, sin sal)", "<strong>200g</strong> de Muslos de pollo (cocidos y desmenuzados)", "<strong>100g</strong> de Arroz (sobre-cocido en el caldo)", "<strong>50g</strong> de Apio y Zanahoria (muy finos y cocidos)"]
         }
@@ -1126,6 +1140,7 @@
         }
         updateCurrentDay();
         updateUIWithSettings();
+        updateChatBubbleVisibility();
     }
 
     function saveSettings() {
@@ -1295,7 +1310,7 @@
         if (!userText) return;
         
         if (!settings.apiKey) {
-            appendMessage('Por favor, añade tu clave API de Gemini en el panel de configuración (<i class="fas fa-cog"></i>) para usar el chat.', 'ai');
+            appendMessage('Por favor, añade tu clave API en el panel de configuración (<i class="fas fa-sliders-h"></i>) para usar el chat.', 'ai');
             return;
         }
 
@@ -1353,6 +1368,22 @@
         chatHistory.scrollTop = chatHistory.scrollHeight;
     }
     
+    // --- MANEJO DE VISIBILIDAD DE LA BURBUJA DE CHAT ---
+    function updateChatBubbleVisibility() {
+        const chatBubble = document.getElementById('open-chat-bubble');
+        const settingsBtn = document.getElementById('settings-btn');
+        
+        if (settings.apiKey && settings.apiKey.trim() !== '') {
+            // Mostrar burbuja de chat, botón de configuración normal
+            chatBubble.classList.add('visible');
+            settingsBtn.classList.remove('api-needed');
+        } else {
+            // Ocultar burbuja de chat, botón de configuración con indicador de API necesaria
+            chatBubble.classList.remove('visible');
+            settingsBtn.classList.add('api-needed');
+        }
+    }
+    
     // --- INICIALIZACIÓN Y EVENT LISTENERS ---
     document.addEventListener('DOMContentLoaded', () => {
         // Cargar todo
@@ -1372,7 +1403,15 @@
         document.getElementById('chat-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
         
         // Configuración
-        document.getElementById('settings-btn').addEventListener('click', () => document.getElementById('settings-panel').classList.toggle('show'));
+        document.getElementById('settings-btn').addEventListener('click', () => {
+            document.getElementById('settings-panel').classList.toggle('show');
+            // Si no hay API, enfocar el campo de API
+            if (!settings.apiKey || settings.apiKey.trim() === '') {
+                setTimeout(() => {
+                    document.getElementById('api-key-input').focus();
+                }, 300);
+            }
+        });
         document.getElementById('cancel-settings').addEventListener('click', () => {
             updateUIWithSettings();
             document.getElementById('settings-panel').classList.remove('show');
@@ -1414,6 +1453,9 @@
                     // Mostrar notificación específica para API
                     showNotification('¡Clave API guardada correctamente! El asistente está listo para usarse.', 'success');
                     
+                    // Actualizar visibilidad de la burbuja
+                    updateChatBubbleVisibility();
+                    
                     // Abrir el chat automáticamente
                     setTimeout(() => {
                         document.getElementById('ai-chat-window').classList.remove('hidden');
@@ -1442,6 +1484,9 @@
                     saveBtn.classList.remove('saving');
                     saveBtn.innerHTML = 'Guardar';
                     saveBtn.disabled = false;
+                    
+                    // Actualizar visibilidad de la burbuja por si se borró la API
+                    updateChatBubbleVisibility();
                 }
             }, 1500); // 1.5 segundos para mostrar la animación
         });
@@ -1463,5 +1508,4 @@
     });
 </script>
 
-</body>
-</html>
+</body></html>
